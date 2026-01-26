@@ -1,0 +1,32 @@
+[project]
+name = "alpha-research-framework"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "RJW20"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas (>=3.0.0,<4.0.0)",
+    "yfinance (>=1.1.0,<2.0.0)"
+]
+
+[dependency-groups]
+dev = [
+    "ruff (>=0.14.14,<0.15.0)"
+]
+
+[tool.ruff]
+line-length = 80
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "N"]
+ignore = [
+    "W293",     # White space on blank lines
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
