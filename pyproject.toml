@@ -9,7 +9,9 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "pandas (>=3.0.0,<4.0.0)",
-    "yfinance (>=1.1.0,<2.0.0)"
+    "yfinance (>=1.1.0,<2.0.0)",
+    "numpy (>=2.4.1,<3.0.0)",
+    "pyarrow (>=23.0.0,<24.0.0)"
 ]
 
 [dependency-groups]
@@ -25,6 +27,9 @@ select = ["F", "E", "W", "I", "N"]
 ignore = [
     "W293",     # White space on blank lines
 ]
+
+[tool.poetry.scripts]
+download = "download:download"
 
 
 [build-system]
