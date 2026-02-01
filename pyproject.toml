@@ -29,8 +29,8 @@ ignore = [
 ]
 
 [tool.poetry.scripts]
-download = "download:download"
-tests = "run_tests:main"
+download = "scripts.download:download"
+tests = "scripts.run_tests:main"
 
 
 [build-system]
