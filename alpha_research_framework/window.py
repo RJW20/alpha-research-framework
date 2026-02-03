@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Window(Enum):
-    """Enum defining the number of trading days within past time-periods."""
+    """Enum defining the number of trading days within common time-periods."""
 
     DAY = 1
     WEEK = 5

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Type
 
-from alpha_research_framework.features.window import Window
+from alpha_research_framework.window import Window
 
 if TYPE_CHECKING:
     from alpha_research_framework.features.feature import Feature
