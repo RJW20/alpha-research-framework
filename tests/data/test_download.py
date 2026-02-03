@@ -86,3 +86,7 @@ class TestDownload(unittest.TestCase):
             self.assertEqual(df.index[-1], info["last_trading_day"])
             self.assertEqual(df["close"].iloc[0], info["first_close"])
             self.assertEqual(df["close"].iloc[-1], info["last_close"])
+
+
+if __name__ == "__main__":
+    unittest.main()

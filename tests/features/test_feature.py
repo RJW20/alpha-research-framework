@@ -39,3 +39,7 @@ class TestFeature(unittest.TestCase):
             features[feature_spec] = np.ndarray(shape=(10,))
 
         dummy.compute({}, features, np.ndarray(shape=(10,)))
+
+
+if __name__ == "__main__":
+    unittest.main()
