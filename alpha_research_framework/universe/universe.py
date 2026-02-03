@@ -8,8 +8,10 @@ import pandas as pd
 
 from alpha_research_framework.data import metadata_path, stocks_path
 from alpha_research_framework.universe.calendar import Calendar
-from alpha_research_framework.universe.data_wrapper import DataWrapper
 from alpha_research_framework.universe.market_data import MarketData
+from alpha_research_framework.window import Window
+
+Returns = dict[Window, np.memmap]
 
 
 class Universe:
@@ -22,14 +24,13 @@ class Universe:
     thereafter.
     """
 
-    PATH = Path("universe")
-
     def __init__(
         self,
         src: Path,
+        path: Path,
         liquidity_threshold: float,
         mcap_threshold: float,
-        lookback: int = 20
+        lookback: Window = Window.MONTH,
     ) -> None:
         """
         Initialize the universe and create all required memmapped arrays.
@@ -39,80 +40,125 @@ class Universe:
         using existence, liquidity, and market cap filters.
         """
 
-        shutil.rmtree(self.PATH, ignore_errors=True)
-        self.PATH.mkdir(parents=True, exist_ok=False)
+        self.path = path
+        self._prepare_path(path)
 
-        with (metadata_path(src)).open() as f:
-            self._metadata = json.load(f)
-        
-        self._calendar = Calendar(
-            self._metadata["start_date"], self._metadata["end_date"]
-        )
+        self._metadata = self._load_metadata(src)
+        self._calendar = self._build_calendar(self._metadata)
 
         tickers = list(self._metadata["tickers"].keys())
-        self.N = len(tickers)
+        self.shape = (self._calendar.T, len(tickers))
 
-        # Allocate memmaps
-        shape = (self._calendar.T, self.N)
-        self._market_data = MarketData(self.PATH, shape=shape)
-        self._mask = np.memmap(
-            self.PATH / "mask.dat",
+        self._market_data, self._mask = self._allocate_storage(path, self.shape)
+        
+        for col, ticker in enumerate(tickers):
+            df = self._load_stock_frame(src, ticker)
+            self._market_data[:, col] = self._compute_market_data(df)
+            shares = self._metadata["tickers"][ticker]["shares_outstanding"]
+            self._mask[:, col] = self._compute_mask(
+                df,
+                shares,
+                liquidity_threshold,
+                mcap_threshold,
+                lookback
+            )
+
+        self._flush()
+        self._initialise_cross_section()
+
+    def cross_section(self, t: int) -> pd.DataFrame:
+        pass
+
+    def build_future_returns(self, horizons: Iterable[Window]) -> None:
+        pass
+
+    # Private helpers
+
+    @staticmethod
+    def _prepare_path(path: Path) -> None:
+        shutil.rmtree(path, ignore_errors=True)
+        path.mkdir(parents=True, exist_ok=False)
+
+    @staticmethod
+    def _load_metadata(src: Path) -> dict:
+        with (metadata_path(src)).open() as f:
+            return json.load(f)
+
+    @staticmethod
+    def _build_calendar(metadata: dict) -> Calendar:
+        return Calendar(
+            metadata["start_date"],
+            metadata["end_date"]
+        )
+    
+    @staticmethod
+    def _allocate_storage(
+        path: Path,
+        shape: tuple[int,int]
+    ) -> tuple[MarketData, np.memmap]:
+        market_data = MarketData(path, shape=shape)
+        mask = np.memmap(
+            path / "mask.dat",
             dtype=bool,
             mode="w+",
             shape=shape,
         )
+        return market_data, mask
+    
+    def _load_stock_frame(self, src: Path, ticker: str) -> pd.DataFrame:
+        df = pd.read_parquet(stocks_path(src) / f"{ticker}.parquet")
+        return df.reindex(self._calendar.index)
+    
+    @staticmethod
+    def _compute_market_data(df: pd.DataFrame) -> tuple[np.ndarray,...]:
+        adj_close = df["adj_close"].to_numpy(dtype=np.float32)
+        adj_volume = (
+            df["volume"] / df["adj_factor"]
+        ).to_numpy(dtype=np.float32)
+        return adj_close, adj_volume
 
-        # Fill memmaps
-        for i, ticker in enumerate(tickers):
-            df = pd.read_parquet(stocks_path(src) / f"{ticker}.parquet")
-            df = df.reindex(self._calendar.index)
+    @staticmethod
+    def _compute_mask(
+        df: pd.DataFrame,
+        shares: int,
+        liquidity_threshold: float,
+        mcap_threshold: float,
+        lookback: Window
+    ) -> np.ndarray:
 
-            # Fill memmaps
-            self._market_data.adj_close[:,i] = \
-                df["adj_close"].astype(np.float32)
-            self._market_data.adj_volume[:,i] = \
-                df["volume"].astype(np.float32) / \
-                df["adj_factor"].astype(np.float32)
+        exists = ~df["adj_close"].isna()
+        rolling_exists = (
+            exists
+            .rolling(lookback.value, min_periods=1)
+            .max()
+            .astype(bool)
+        )
 
-            exists = ~df["adj_close"].isna()
-            rolling_exists = (
-                exists
-                .rolling(lookback, min_periods=1)
-                .max()
-                .astype(np.bool)
-            )
+        dollar_vol = df["adj_close"] * df["volume"]
+        liquidity_mask = (
+            dollar_vol
+            .rolling(lookback.value, min_periods=1)
+            .mean()
+            >= liquidity_threshold
+        )
 
-            dollar_vol = df["adj_close"] * df["volume"]
-            liquidity_mask = (
-                dollar_vol
-                .rolling(lookback, min_periods=1)
-                .mean()
-                >= liquidity_threshold
-            ).astype(np.bool)
+        rolling_adj_close = (
+            df["adj_close"]
+            .rolling(lookback.value, min_periods=1)
+            .mean()
+        )
+        mcap_mask = rolling_adj_close * shares >= mcap_threshold
 
-            shares = self._metadata["tickers"][ticker]["shares_outstanding"]
-            mcap_mask = (df["adj_close"] * shares >= mcap_threshold).values
+        return (
+            rolling_exists.to_numpy() &
+            liquidity_mask.to_numpy() &
+            mcap_mask.to_numpy()
+        )
 
-            self._mask[:,i] = rolling_exists & liquidity_mask & mcap_mask
-
-        # Flush memmaps
+    def _flush(self) -> None:
         self._market_data.flush()
         self._mask.flush()
 
-        # Prepare cross-section constituents
-        self.features = DataWrapper()
-        self.future_returns = DataWrapper()
-
-    def __del__(self) -> None:
-        """Remove all memmapped arrays."""
-
-        shutil.rmtree(self.PATH, ignore_errors=True)
-
-    def build_features(self, features: Iterable[str]) -> None:
-        pass
-
-    def build_future_returns(self, horizons: Iterable[int]) -> None:
-        pass
-
-    def cross_section(self, t: int) -> pd.DataFrame:
-        pass
+    def _initialise_cross_section(self) -> None:
+        self._features = Features()
+        self._future_returns = Returns()

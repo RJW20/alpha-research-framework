@@ -12,8 +12,10 @@ class Calendar:
 
     def __init__(self, start_date: str, end_date: str) -> None:
         self.index = pd.date_range(
-            start_date, end_date, freq='B').astype('datetime64[ms]'
-        )
+            start_date,
+            end_date,
+            freq='B'
+        ).astype('datetime64[ms]')
         self.T: int = len(self.index)
 
     def date(self, t: int) -> pd.Timestamp:

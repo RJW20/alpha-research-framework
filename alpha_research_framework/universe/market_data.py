@@ -20,6 +20,12 @@ class MarketData:
             shape=shape,
         )
 
+    def __getitem__(self, key):
+        return self.adj_close[key], self.adj_volume[key]
+    
+    def __setitem__(self, key, value) -> None:
+        self.adj_close[key], self.adj_volume[key] = value
+
     def flush(self) -> None:
         """Flush all memmaps."""
 
