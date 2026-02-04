@@ -80,7 +80,23 @@ class Universe:
         self._build_features(ordered_features)
         
     def cross_section(self, t: int) -> pd.DataFrame:
-        """"""
+        """
+        Return a pd.DataFrame containing market data and computed features for
+        all stocks in-universe at time t.
+        """
+
+        mask = self._mask[t, :]
+        return pd.DataFrame(
+            {
+                "adj_close": self._market_data.adj_close[t, mask],
+                "adj_volume": self._market_data.adj_volume[t, mask],
+            }
+            |
+            {
+                feature_spec.instantiate().name: feature[t, mask]
+                for feature_spec, feature in self._features.items()
+            }
+        )
 
     def build_future_returns(self, horizons: Iterable[Window]) -> None:
         """"""
