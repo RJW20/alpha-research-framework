@@ -1,12 +1,14 @@
 import json
 import shutil
 from collections.abc import Iterable
+from graphlib import TopologicalSorter
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from alpha_research_framework.data import metadata_path, stocks_path
+from alpha_research_framework.features import Features, FeatureSpec
 from alpha_research_framework.universe.calendar import Calendar
 from alpha_research_framework.universe.market_data import MarketData
 from alpha_research_framework.window import Window
@@ -33,7 +35,7 @@ class Universe:
         lookback: Window = Window.MONTH,
     ) -> None:
         """
-        Initialize the universe and create all required memmapped arrays.
+        Initialise the universe and create all required memmapped arrays.
 
         Loads per-stock data from src, constructs a global trading calendar,
         writes time * stock arrays to disk, and computes the in-universe mask
@@ -66,11 +68,22 @@ class Universe:
         self._flush()
         self._initialise_cross_section()
 
+    def build_features(self, features: Iterable[FeatureSpec]) -> None:
+        """
+        Build the requested features for every timestamp and stock.
+        
+        Also builds any features they are dependent on.
+        """
+
+        features = self._expand_dependencies(features)
+        ordered_features = self._order_dependencies(features)
+        self._build_features(ordered_features)
+        
     def cross_section(self, t: int) -> pd.DataFrame:
-        pass
+        """"""
 
     def build_future_returns(self, horizons: Iterable[Window]) -> None:
-        pass
+        """"""
 
     # Private helpers
 
@@ -162,3 +175,41 @@ class Universe:
     def _initialise_cross_section(self) -> None:
         self._features = Features()
         self._future_returns = Returns()
+
+    @staticmethod
+    def _expand_dependencies(
+        features: Iterable[FeatureSpec]
+    ) -> set[FeatureSpec]:
+        expanded: set[FeatureSpec] = set()
+        to_expand = set(features)
+        while to_expand:
+            feature_spec = to_expand.pop()
+            if feature_spec not in expanded:
+                expanded.add(feature_spec)
+                feature = feature_spec.instantiate()
+                to_expand |= feature.dependencies
+        return expanded
+    
+    @staticmethod
+    def _order_dependencies(
+        features: Iterable[FeatureSpec]
+    ) -> Iterable[FeatureSpec]:
+        features = {
+            feature_spec: feature_spec.instantiate().dependencies
+            for feature_spec in features
+        }
+        ts = TopologicalSorter(features)
+        return ts.static_order()
+    
+    def _build_features(self, features: Iterable[FeatureSpec]) -> None:
+        for feature_spec in features:
+            feature = feature_spec.instantiate()
+            values = np.memmap(
+                self.path / f"{feature.name}.dat",
+                dtype=np.float32,
+                mode="w+",
+                shape=self.shape
+            )
+            feature.compute(self._market_data, self._features, values)
+            values.flush()
+            self._features[feature_spec] = values

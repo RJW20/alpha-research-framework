@@ -5,10 +5,49 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from alpha_research_framework import Universe
 from alpha_research_framework.data import metadata_path, stocks_path
+from alpha_research_framework.features import Feature, Features, FeatureSpec
+from alpha_research_framework.universe import MarketData
+
+
+class Feature1(Feature):
+
+    NAME = "feature_1"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = self.NAME
+
+    def compute(
+        self,
+        market_data: MarketData,
+        features: Features,
+        out: npt.ArrayLike
+    ) -> None:
+        out[:] = np.ones(out.shape)
+
+
+class Feature2(Feature):
+
+    NAME = "feature_2"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = self.NAME
+        self._feature_1_dependency = FeatureSpec(Feature1, ())
+        self.dependencies = {self._feature_1_dependency}
+
+    def compute(
+        self,
+        market_data: MarketData,
+        features: Features,
+        out: npt.ArrayLike
+    ) -> None:
+        out[:] = features[self._feature_1_dependency][:] * 2
 
 
 class TestUniverse(unittest.TestCase):
@@ -98,6 +137,31 @@ class TestUniverse(unittest.TestCase):
         mask = self._open_memmap("mask", np.bool)
         self.assertEqual(mask.shape, self.shape)
         self.assertTrue(mask.all())
+
+    def test_build_features(self) -> None:
+        """
+        Verfiy features are built with intermediate dependencies and correct
+        values.
+        """
+
+        u = Universe(
+            src=self.src,
+            path=self.path,
+            liquidity_threshold=0.0,
+            mcap_threshold=0.0
+        )
+
+        u.build_features([FeatureSpec(Feature2, ())])
+
+        self.assertTrue((self.path / "feature_1.dat").exists())
+        feature_1 = self._open_memmap("feature_1", np.float32)
+        self.assertEqual(feature_1.shape, self.shape)
+        np.testing.assert_array_equal(feature_1, np.ones(self.shape))
+
+        self.assertTrue((self.path / "feature_2.dat").exists())
+        feature_2 = self._open_memmap("feature_2", np.float32)
+        self.assertEqual(feature_2.shape, self.shape)
+        np.testing.assert_array_equal(feature_2, np.ones(self.shape) * 2)
 
 
 if __name__ == "__main__":

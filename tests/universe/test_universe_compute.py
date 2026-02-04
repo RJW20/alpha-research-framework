@@ -6,9 +6,9 @@ import pandas as pd
 from alpha_research_framework import Universe, Window
 
 
-class TestUniverseCompute(unittest.TestCase):
+class TestComputeMarketData(unittest.TestCase):
 
-    def test_compute_market_data(self) -> None:
+    def test(self) -> None:
 
         df = pd.DataFrame({
             "adj_close": [10.0, 11.0, 12.0],
@@ -28,7 +28,10 @@ class TestUniverseCompute(unittest.TestCase):
             np.array([100.0, 100.0, 100.0], dtype=np.float32),
         )
 
-    def test_compute_mask_all_conditions_met(self) -> None:
+
+class TestUniverseComputeMask(unittest.TestCase):
+
+    def test_all_conditions_met(self) -> None:
 
         df = pd.DataFrame({
             "adj_close": [10.0, 10.0, 10.0],
@@ -65,7 +68,7 @@ class TestUniverseCompute(unittest.TestCase):
             np.array([True, False, True]),
         )
 
-    def test_compute_mask_liquidity_threshold(self) -> None:
+    def test_liquidity_threshold(self) -> None:
 
         df = pd.DataFrame({
             "adj_close": [10.0, 10.0, 10.0],
@@ -85,7 +88,7 @@ class TestUniverseCompute(unittest.TestCase):
             np.array([False, True, True]),
         )
 
-    def test_compute_mask_mcap_threshold(self) -> None:
+    def test_mcap_threshold(self) -> None:
 
         df = pd.DataFrame({
             "adj_close": [1.0, 10.0, 100.0],
@@ -105,7 +108,7 @@ class TestUniverseCompute(unittest.TestCase):
             np.array([False, True, True]),
         )
 
-    def test_compute_mask_rolling_lookback(self) -> None:
+    def test_rolling_lookback(self) -> None:
 
         df = pd.DataFrame({
             "adj_close": [10.0, np.nan, 10.0],
