@@ -1,4 +1,5 @@
 import pandas as pd
+import pandas_market_calendars as mcal
 
 
 class Calendar:
@@ -11,11 +12,9 @@ class Calendar:
     """
 
     def __init__(self, start_date: str, end_date: str) -> None:
-        self.index = pd.date_range(
-            start_date,
-            end_date,
-            freq='B'
-        ).astype('datetime64[ms]')
+        nyse = mcal.get_calendar('NYSE')
+        schedule = nyse.schedule(start_date, end_date)
+        self.index = schedule.index.astype('datetime64[ms]')
         self.T: int = len(self.index)
 
     def date(self, t: int) -> pd.Timestamp:
