@@ -1,9 +1,9 @@
 import unittest
 
 import numpy as np
-import numpy.typing as npt
 
 from alpha_research_framework.features import Feature, Features, FeatureSpec
+from alpha_research_framework.market_array import MarketArray
 from alpha_research_framework.universe import MarketData
 
 
@@ -15,13 +15,14 @@ class Dummy(Feature):
     def __init__(self) -> None:
         super().__init__()
         self.name = f"{self.NAME}"
-        self.dependencies.add(FeatureSpec(Dummy, ()))
+        self.dependencies = {FeatureSpec(Dummy, ())}
         
     def compute(
         self,
         market_data: MarketData,
         features: Features,
-        out: npt.ArrayLike) -> None:
+        out: MarketArray
+    ) -> None:
         pass
 
 

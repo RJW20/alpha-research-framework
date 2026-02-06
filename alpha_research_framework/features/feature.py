@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Callable
 
-import numpy.typing as npt
-
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.features import Features
+from alpha_research_framework.market_array import MarketArray
 from alpha_research_framework.universe import MarketData
 
 
@@ -25,8 +24,8 @@ class Feature(ABC):
             self: Feature,
             market_data: MarketData,
             features: Features,
-            out: npt.ArrayLike
-        ) -> Callable[[Feature, MarketData, Features, npt.ArrayLike], None]:
+            out: MarketArray
+        ) -> Callable[[Feature, MarketData, Features, MarketData], None]:
             missing = self.dependencies - features.keys()
             if missing:
                 raise ValueError(
@@ -42,7 +41,7 @@ class Feature(ABC):
         self,
         market_data: MarketData,
         features: Features,
-        out: npt.ArrayLike
+        out: MarketArray
     ) -> None:
         """
         Populate out with values calculated from raw market data and/or

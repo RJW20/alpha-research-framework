@@ -1,9 +1,8 @@
 import unittest
 
-import numpy.typing as npt
-
 from alpha_research_framework import Universe
 from alpha_research_framework.features import Feature, Features, FeatureSpec
+from alpha_research_framework.market_array import MarketArray
 from alpha_research_framework.universe import MarketData
 
 
@@ -19,7 +18,7 @@ class Dummy(Feature):
         self,
         market_data: MarketData,
         features: Features,
-        out: npt.ArrayLike
+        out: MarketArray
     ) -> None:
         pass
 

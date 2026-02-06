@@ -5,13 +5,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import pandas_market_calendars as mcal
 
 from alpha_research_framework import Universe
 from alpha_research_framework.data import metadata_path, stocks_path
 from alpha_research_framework.features import Feature, Features, FeatureSpec
+from alpha_research_framework.market_array import MarketArray
 from alpha_research_framework.universe import MarketData
 
 
@@ -126,7 +126,7 @@ class TestUniverse(unittest.TestCase):
                 self,
                 market_data: MarketData,
                 features: Features,
-                out: npt.ArrayLike
+                out: MarketArray
             ) -> None:
                 out[:] = np.ones(out.shape)
 
@@ -141,7 +141,7 @@ class TestUniverse(unittest.TestCase):
                 self,
                 market_data: MarketData,
                 features: Features,
-                out: npt.ArrayLike
+                out: MarketArray
             ) -> None:
                 out[:] = features[self._feature_1_dependency][:] * 2
 
@@ -174,7 +174,7 @@ class TestUniverse(unittest.TestCase):
                 self,
                 market_data: MarketData,
                 features: Features,
-                out: npt.ArrayLike
+                out: MarketArray
             ) -> None:
                 pass
 
