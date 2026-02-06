@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from alpha_research_framework.data import metadata_path, stocks_path
-from alpha_research_framework.features import Features, FeatureSpec
+from alpha_research_framework.features import Features, FeatureSpec, FeatureTag
 from alpha_research_framework.universe.calendar import Calendar
 from alpha_research_framework.universe.market_data import MarketData
 from alpha_research_framework.window import Window
@@ -77,7 +77,18 @@ class Universe:
 
         features = self._expand_dependencies(features)
         ordered_features = self._order_dependencies(features)
-        self._build_features(ordered_features)
+        
+        for feature_spec in ordered_features:
+            feature = feature_spec.instantiate()
+            values = np.memmap(
+                self.path / f"{feature.name}.dat",
+                dtype=np.float32,
+                mode="w+",
+                shape=self.shape
+            )
+            feature.compute(self._market_data, self._features, values)
+            values.flush()
+            self._features[feature_spec] = values
         
     def cross_section(self, t: int) -> pd.DataFrame:
         """
@@ -93,13 +104,16 @@ class Universe:
             }
             |
             {
-                feature_spec.instantiate().name: feature[t, mask]
-                for feature_spec, feature in self._features.items()
+                feature.name: values[t, mask]
+                for feature, values in zip(
+                    [
+                        feature_spec.instantiate()
+                        for feature_spec in self._features.keys()
+                    ],
+                    self._features.values()
+                ) if feature.TAG == FeatureTag.PREDICTOR
             }
         )
-
-    def build_future_returns(self, horizons: Iterable[Window]) -> None:
-        """"""
 
     # Private helpers
 
@@ -216,16 +230,3 @@ class Universe:
         }
         ts = TopologicalSorter(features)
         return ts.static_order()
-    
-    def _build_features(self, features: Iterable[FeatureSpec]) -> None:
-        for feature_spec in features:
-            feature = feature_spec.instantiate()
-            values = np.memmap(
-                self.path / f"{feature.name}.dat",
-                dtype=np.float32,
-                mode="w+",
-                shape=self.shape
-            )
-            feature.compute(self._market_data, self._features, values)
-            values.flush()
-            self._features[feature_spec] = values

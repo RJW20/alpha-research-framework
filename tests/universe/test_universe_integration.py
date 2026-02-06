@@ -10,7 +10,12 @@ import pandas_market_calendars as mcal
 
 from alpha_research_framework import Universe
 from alpha_research_framework.data import metadata_path, stocks_path
-from alpha_research_framework.features import Feature, Features, FeatureSpec
+from alpha_research_framework.features import (
+    Feature,
+    Features,
+    FeatureSpec,
+    FeatureTag,
+)
 from alpha_research_framework.market_array import MarketArray
 from alpha_research_framework.universe import MarketData
 
@@ -157,16 +162,21 @@ class TestUniverse(unittest.TestCase):
         self.assertEqual(feature_2.shape, self.shape)
         np.testing.assert_array_equal(feature_2, np.ones(self.shape) * 2)
 
-    def test_cross_section_returns_masked_frame(self):
-        """
-        Verify cross-section includes all market data and features and is
-        masked correctly.
-        """
+    def test_cross_section_market_data(self) -> None:
+        """Verify cross-section includes all market data."""
+
+        universe = self._build_universe()
+        x = universe.cross_section(0)
+        self.assertListEqual(list(x.columns), ["adj_close", "adj_volume"])
+
+    def test_cross_section_features(self) -> None:
+        """Verify cross-section includes all predictive features."""
 
         universe = self._build_universe()
 
-        class Dummy(Feature):
-            NAME = "dummy"
+        class DummyPredictor(Feature):
+            NAME = "dummy_predictor"
+            TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
                 super().__init__()
                 self.name = self.NAME
@@ -178,32 +188,48 @@ class TestUniverse(unittest.TestCase):
             ) -> None:
                 pass
 
-        # Fake an already build feature
-        dummy_feature_spec = FeatureSpec(Dummy, ())
-        dummy_values = np.memmap(
-            self.path / f"{dummy_feature_spec.instantiate().name}.dat",
-            dtype=np.float32,
-            mode="w+",
-            shape=self.shape
-        )
-        dummy_values[:] = np.ones(self.shape)
-        dummy_values.flush()
-        universe._features[dummy_feature_spec] = dummy_values
+        class DummyTarget(Feature):
+            NAME = "dummy_target"
+            TAG = FeatureTag.TARGET
+            def __init__(self) -> None:
+                super().__init__()
+                self.name = self.NAME
+            def compute(
+                self,
+                market_data: MarketData,
+                features: Features,
+                out: MarketArray
+            ) -> None:
+                pass
 
-        # Force a known mask
-        removed_stocks = 1
-        included_stocks = self.shape[1] - removed_stocks
-        universe._mask[:, :] = np.array(
-            [False] * removed_stocks + [True] * included_stocks
+        universe._features[FeatureSpec(DummyPredictor, ())] = np.ones(
+            self.shape,
+            dtype=np.float32
+        )
+        universe._features[FeatureSpec(DummyTarget, ())] = np.ones(
+            self.shape,
+            dtype=np.float32
         )
 
         x = universe.cross_section(0)
-
         self.assertListEqual(
             list(x.columns),
-            ["adj_close", "adj_volume", Dummy.NAME]
+            ["adj_close", "adj_volume", DummyPredictor.NAME]
         )
-        self.assertEqual(len(x), included_stocks)
+
+    def test_cross_section_mask(self) -> None:
+        """Verify cross-section is masked correctly."""
+
+        universe = self._build_universe()
+
+        for removed_stocks in range(0, self.shape[1]):
+            included_stocks = self.shape[1] - removed_stocks
+            universe._mask[:, :] = np.array(
+                [False] * removed_stocks + [True] * included_stocks
+            )
+
+            x = universe.cross_section(0)
+            self.assertEqual(len(x), included_stocks)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 from alpha_research_framework.features.feature_spec import FeatureSpec
+from alpha_research_framework.features.feature_tag import FeatureTag
 from alpha_research_framework.features.features import Features
 from alpha_research_framework.market_array import MarketArray
 from alpha_research_framework.universe import MarketData
@@ -9,6 +10,8 @@ from alpha_research_framework.universe import MarketData
 
 class Feature(ABC):
     """Abstract feature with automatic dependency checking in compute."""
+
+    TAG: FeatureTag
 
     def __init__(self) -> None:
         self.name: str
