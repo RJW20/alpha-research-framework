@@ -10,14 +10,10 @@ import pandas_market_calendars as mcal
 
 from alpha_research_framework import Universe
 from alpha_research_framework.data import metadata_path, stocks_path
-from alpha_research_framework.features import (
-    Feature,
-    Features,
-    FeatureSpec,
-    FeatureTag,
-)
+from alpha_research_framework.features import Features, FeatureSpec, FeatureTag
 from alpha_research_framework.market_array import MarketArray
 from alpha_research_framework.universe import MarketData
+from tests.dummy_feature import DummyFeature
 
 
 class TestUniverse(unittest.TestCase):
@@ -85,7 +81,6 @@ class TestUniverse(unittest.TestCase):
             mcap_threshold=0.0
         )
         
-
     def _open_memmap(self, name: str, dtype: type) -> np.memmap:
         return np.memmap(
             self.path / f"{name}.dat",
@@ -122,11 +117,11 @@ class TestUniverse(unittest.TestCase):
 
         universe = self._build_universe()
 
-        class Feature1(Feature):
-            NAME = "feature_1"
+        class FeatureA(DummyFeature):
+            NAME = "a"
+            TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__()
-                self.name = self.NAME
+                super().__init__("")
             def compute(
                 self,
                 market_data: MarketData,
@@ -135,30 +130,30 @@ class TestUniverse(unittest.TestCase):
             ) -> None:
                 out[:] = np.ones(out.shape)
 
-        class Feature2(Feature):
-            NAME = "feature_2"
+        class FeatureB(DummyFeature):
+            NAME = "b"
+            TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__()
-                self.name = self.NAME
-                self._feature_1_dependency = FeatureSpec(Feature1, ())
-                self.dependencies = {self._feature_1_dependency}
+                super().__init__("")
+                self._a_dependency = FeatureSpec(FeatureA, ())
+                self.dependencies = {self._a_dependency}
             def compute(
                 self,
                 market_data: MarketData,
                 features: Features,
                 out: MarketArray
             ) -> None:
-                out[:] = features[self._feature_1_dependency][:] * 2
+                out[:] = features[self._a_dependency][:] * 2
 
-        universe.build_features([FeatureSpec(Feature2, ())])
+        universe.build_features([FeatureSpec(FeatureB, ())])
 
-        self.assertTrue((self.path / f"{Feature1.NAME}.dat").exists())
-        feature_1 = self._open_memmap(f"{Feature1.NAME}", np.float32)
-        self.assertEqual(feature_1.shape, self.shape)
-        np.testing.assert_array_equal(feature_1, np.ones(self.shape))
+        self.assertTrue((self.path / f"{FeatureA.NAME}.dat").exists())
+        feature_a = self._open_memmap(f"{FeatureA.NAME}", np.float32)
+        self.assertEqual(feature_a.shape, self.shape)
+        np.testing.assert_array_equal(feature_a, np.ones(self.shape))
 
-        self.assertTrue((self.path / f"{Feature2.NAME}.dat").exists())
-        feature_2 = self._open_memmap(f"{Feature2.NAME}", np.float32)
+        self.assertTrue((self.path / f"{FeatureB.NAME}.dat").exists())
+        feature_2 = self._open_memmap(f"{FeatureB.NAME}", np.float32)
         self.assertEqual(feature_2.shape, self.shape)
         np.testing.assert_array_equal(feature_2, np.ones(self.shape) * 2)
 
@@ -174,39 +169,22 @@ class TestUniverse(unittest.TestCase):
 
         universe = self._build_universe()
 
-        class DummyPredictor(Feature):
-            NAME = "dummy_predictor"
+        class Predictor(DummyFeature):
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__()
-                self.name = self.NAME
-            def compute(
-                self,
-                market_data: MarketData,
-                features: Features,
-                out: MarketArray
-            ) -> None:
-                pass
+                super().__init__("predictor")
 
-        class DummyTarget(Feature):
-            NAME = "dummy_target"
+        class Target(DummyFeature):
             TAG = FeatureTag.TARGET
             def __init__(self) -> None:
-                super().__init__()
+                super().__init__("target")
                 self.name = self.NAME
-            def compute(
-                self,
-                market_data: MarketData,
-                features: Features,
-                out: MarketArray
-            ) -> None:
-                pass
 
-        universe._features[FeatureSpec(DummyPredictor, ())] = np.ones(
+        universe._features[FeatureSpec(Predictor, ())] = np.ones(
             self.shape,
             dtype=np.float32
         )
-        universe._features[FeatureSpec(DummyTarget, ())] = np.ones(
+        universe._features[FeatureSpec(Target, ())] = np.ones(
             self.shape,
             dtype=np.float32
         )
@@ -214,7 +192,7 @@ class TestUniverse(unittest.TestCase):
         x = universe.cross_section(0)
         self.assertListEqual(
             list(x.columns),
-            ["adj_close", "adj_volume", DummyPredictor.NAME]
+            ["adj_close", "adj_volume", Predictor.name]
         )
 
     def test_cross_section_mask(self) -> None:

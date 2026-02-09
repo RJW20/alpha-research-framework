@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import ParamSpec
 
+from alpha_research_framework.features.feature_error import FeatureError
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.feature_tag import FeatureTag
 from alpha_research_framework.features.features import Features
@@ -9,7 +10,7 @@ from alpha_research_framework.universe import MarketData
 
 
 class Feature(ABC):
-    """Abstract feature with automatic dependency checking in compute."""
+    """Abstract feature with automatic dependency checking."""
 
     TAG: FeatureTag
 
@@ -19,25 +20,8 @@ class Feature(ABC):
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        original = getattr(cls, "compute", None)
-        if original is None or getattr(original, "__isabstractmethod__", False):
-            return
-
-        def wrapper(
-            self: Feature,
-            market_data: MarketData,
-            features: Features,
-            out: MarketArray
-        ) -> Callable[[Feature, MarketData, Features, MarketData], None]:
-            missing = self.dependencies - features.keys()
-            if missing:
-                raise ValueError(
-                    f"Feature {self.name} cannot be computed: missing "
-                    f"dependencies {missing}"
-                )
-            return original(self, market_data, features, out)
-
-        setattr(cls, "compute", wrapper)
+        cls._wrap_init()
+        cls._wrap_compute()
 
     @abstractmethod
     def compute(
@@ -51,3 +35,49 @@ class Feature(ABC):
         already computed features.
         """
         ...
+
+    @classmethod
+    def _wrap_init(cls) -> None:
+        """
+        Wrap the __init__ method with a check to ensure subclasses cannot depend
+        on features with a higher TAG.
+        """
+
+        original = cls.__init__
+
+        P = ParamSpec("P")
+        def wrapped(self: Feature, *args: P.args, **kwargs: P.kwargs) -> None:
+            original(self, *args, **kwargs)
+            for feature_spec in self.dependencies:
+                feature = feature_spec.instantiate()
+                if feature.TAG > self.TAG:
+                    raise FeatureError(
+                        f"Feature {self.name} cannot be instantiated: it "
+                        f"cannot depend on {feature.name} with higher TAG."
+                    )
+
+        cls.__init__ = wrapped
+
+    @classmethod
+    def _wrap_compute(cls) -> None:
+        """Ensure all dependencies are present in the given features."""
+
+        original = getattr(cls, "compute", None)
+        if original is None or getattr(original, "__isabstractmethod__", False):
+            return
+
+        def wrapper(
+            self: Feature,
+            market_data: MarketData,
+            features: Features,
+            out: MarketArray
+        ) -> None:
+            missing = self.dependencies - features.keys()
+            if missing:
+                raise FeatureError(
+                    f"Feature {self.name} cannot be computed: missing "
+                    f"dependencies {missing}."
+                )
+            return original(self, market_data, features, out)
+
+        setattr(cls, "compute", wrapper)

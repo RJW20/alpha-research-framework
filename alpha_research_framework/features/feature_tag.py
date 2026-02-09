@@ -1,8 +1,8 @@
-from enum import Enum, auto
+from enum import IntEnum
 
 
-class FeatureTag(Enum):
+class FeatureTag(IntEnum):
     """Enum for tagging feature types."""
 
-    PREDICTOR = auto()
-    TARGET = auto()
+    PREDICTOR = 0
+    TARGET = 1
