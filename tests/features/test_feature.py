@@ -19,13 +19,12 @@ class TestFeature(unittest.TestCase):
         class Predictor(DummyFeature):
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__("predictor")
+                super().__init__()
 
         class Target(DummyFeature):
-            NAME = "target"
             TAG = FeatureTag.TARGET
             def __init__(self) -> None:
-                super().__init__("target")
+                super().__init__()
 
         class PredictorOnPredictor(Predictor):
             def __init__(self) -> None:
@@ -59,12 +58,12 @@ class TestFeature(unittest.TestCase):
         class FeatureA(DummyFeature):
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__("a")
+                super().__init__()
 
         class FeatureB(DummyFeature):
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__("b")
+                super().__init__()
                 self.dependencies = {FeatureSpec(FeatureA, ())}
 
         b = FeatureB()

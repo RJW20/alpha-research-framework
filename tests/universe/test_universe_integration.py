@@ -118,10 +118,9 @@ class TestUniverse(unittest.TestCase):
         universe = self._build_universe()
 
         class FeatureA(DummyFeature):
-            NAME = "a"
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__("")
+                super().__init__()
             def compute(
                 self,
                 market_data: MarketData,
@@ -131,10 +130,9 @@ class TestUniverse(unittest.TestCase):
                 out[:] = np.ones(out.shape)
 
         class FeatureB(DummyFeature):
-            NAME = "b"
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__("")
+                super().__init__()
                 self._a_dependency = FeatureSpec(FeatureA, ())
                 self.dependencies = {self._a_dependency}
             def compute(
@@ -172,13 +170,12 @@ class TestUniverse(unittest.TestCase):
         class Predictor(DummyFeature):
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
-                super().__init__("predictor")
+                super().__init__()
 
         class Target(DummyFeature):
             TAG = FeatureTag.TARGET
             def __init__(self) -> None:
-                super().__init__("target")
-                self.name = self.NAME
+                super().__init__()
 
         universe._features[FeatureSpec(Predictor, ())] = np.ones(
             self.shape,
@@ -192,7 +189,7 @@ class TestUniverse(unittest.TestCase):
         x = universe.cross_section(0)
         self.assertListEqual(
             list(x.columns),
-            ["adj_close", "adj_volume", Predictor.name]
+            ["adj_close", "adj_volume", Predictor.NAME]
         )
 
     def test_cross_section_mask(self) -> None:

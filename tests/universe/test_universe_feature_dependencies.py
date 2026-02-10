@@ -8,20 +8,20 @@ from tests.dummy_feature import DummyFeature
 class FeatureA(DummyFeature):
     TAG = FeatureTag.PREDICTOR
     def __init__(self) -> None:
-        super().__init__("a")
+        super().__init__()
 
 
 class FeatureB(DummyFeature):
     TAG = FeatureTag.PREDICTOR
     def __init__(self) -> None:
-        super().__init__("b")
+        super().__init__()
         self.dependencies = {FeatureSpec(FeatureA, ())}
 
 
 class FeatureC(DummyFeature):
     TAG = FeatureTag.PREDICTOR
     def __init__(self) -> None:
-        super().__init__("c")
+        super().__init__()
         self.name = self.NAME
         self.dependencies = {FeatureSpec(FeatureB, ())}
 
