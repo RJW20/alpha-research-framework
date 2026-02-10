@@ -13,8 +13,6 @@ from alpha_research_framework.universe.calendar import Calendar
 from alpha_research_framework.universe.market_data import MarketData
 from alpha_research_framework.window import Window
 
-Returns = dict[Window, np.memmap]
-
 
 class Universe:
     """
@@ -66,7 +64,7 @@ class Universe:
             )
 
         self._flush()
-        self._initialise_cross_section()
+        self._features = Features()
 
     def build_features(self, features: Iterable[FeatureSpec]) -> None:
         """
@@ -92,15 +90,15 @@ class Universe:
         
     def cross_section(self, t: int) -> pd.DataFrame:
         """
-        Return a pd.DataFrame containing market data and computed features for
+        Return a pd.DataFrame containing market data and predictive features for
         all stocks in-universe at time t.
         """
 
         mask = self._mask[t, :]
         return pd.DataFrame(
             {
-                "adj_close": self._market_data.adj_close[t, mask],
-                "adj_volume": self._market_data.adj_volume[t, mask],
+                "price": self._market_data.price[t, mask],
+                "volume": self._market_data.volume[t, mask],
             }
             |
             {
@@ -154,11 +152,9 @@ class Universe:
     
     @staticmethod
     def _compute_market_data(df: pd.DataFrame) -> tuple[np.ndarray,...]:
-        adj_close = df["adj_close"].to_numpy(dtype=np.float32)
-        adj_volume = (
-            df["volume"] / df["adj_factor"]
-        ).to_numpy(dtype=np.float32)
-        return adj_close, adj_volume
+        price = df["adj_close"].to_numpy(dtype=np.float32)
+        volume = (df["volume"] / df["adj_factor"]).to_numpy(dtype=np.float32)
+        return price, volume
 
     @staticmethod
     def _compute_mask(
@@ -201,10 +197,6 @@ class Universe:
     def _flush(self) -> None:
         self._market_data.flush()
         self._mask.flush()
-
-    def _initialise_cross_section(self) -> None:
-        self._features = Features()
-        self._future_returns = Returns()
 
     @staticmethod
     def _expand_dependencies(

@@ -96,13 +96,13 @@ class TestUniverse(unittest.TestCase):
 
         self.assertEqual(universe.shape, self.shape)
 
-        self.assertTrue((self.path / "adj_close.dat").exists())
-        adj_close = self._open_memmap("adj_close", np.float32)
-        self.assertEqual(adj_close.shape, self.shape)
+        self.assertTrue((self.path / "price.dat").exists())
+        price = self._open_memmap("price", np.float32)
+        self.assertEqual(price.shape, self.shape)
 
-        self.assertTrue((self.path / "adj_volume.dat").exists())
-        adj_volume = self._open_memmap("adj_volume", np.float32)
-        self.assertEqual(adj_volume.shape, self.shape)
+        self.assertTrue((self.path / "volume.dat").exists())
+        volume = self._open_memmap("volume", np.float32)
+        self.assertEqual(volume.shape, self.shape)
 
         self.assertTrue((self.path / "mask.dat").exists())
         mask = self._open_memmap("mask", np.bool)
@@ -160,7 +160,7 @@ class TestUniverse(unittest.TestCase):
 
         universe = self._build_universe()
         x = universe.cross_section(0)
-        self.assertListEqual(list(x.columns), ["adj_close", "adj_volume"])
+        self.assertListEqual(list(x.columns), ["price", "volume"])
 
     def test_cross_section_features(self) -> None:
         """Verify cross-section includes all predictive features."""
@@ -189,7 +189,7 @@ class TestUniverse(unittest.TestCase):
         x = universe.cross_section(0)
         self.assertListEqual(
             list(x.columns),
-            ["adj_close", "adj_volume", Predictor.NAME]
+            ["price", "volume", Predictor.NAME]
         )
 
     def test_cross_section_mask(self) -> None:

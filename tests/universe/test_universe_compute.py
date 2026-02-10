@@ -16,15 +16,15 @@ class TestComputeMarketData(unittest.TestCase):
             "adj_factor": [1.0, 2.0, 3.0],
         })
 
-        adj_close, adj_volume = Universe._compute_market_data(df)
+        price, volume = Universe._compute_market_data(df)
 
         np.testing.assert_array_equal(
-            adj_close,
+            price,
             np.array([10.0, 11.0, 12.0], dtype=np.float32),
         )
 
         np.testing.assert_array_equal(
-            adj_volume,
+            volume,
             np.array([100.0, 100.0, 100.0], dtype=np.float32),
         )
 
