@@ -10,7 +10,7 @@ import pandas as pd
 from alpha_research_framework.data import metadata_path, stocks_path
 from alpha_research_framework.features import Features, FeatureSpec, FeatureTag
 from alpha_research_framework.universe.calendar import Calendar
-from alpha_research_framework.universe.market_data import MarketData
+from alpha_research_framework.universe.market_data_store import MarketDataStore
 from alpha_research_framework.window import Window
 
 
@@ -136,8 +136,8 @@ class Universe:
     def _allocate_storage(
         path: Path,
         shape: tuple[int,int]
-    ) -> tuple[MarketData, np.memmap]:
-        market_data = MarketData(path, shape=shape)
+    ) -> tuple[MarketDataStore, np.memmap]:
+        market_data = MarketDataStore(path, shape=shape)
         mask = np.memmap(
             path / "mask.dat",
             dtype=bool,

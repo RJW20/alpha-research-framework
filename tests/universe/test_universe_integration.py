@@ -11,8 +11,10 @@ import pandas_market_calendars as mcal
 from alpha_research_framework import Universe
 from alpha_research_framework.data import metadata_path, stocks_path
 from alpha_research_framework.features import Features, FeatureSpec, FeatureTag
-from alpha_research_framework.market_array import MarketArray
-from alpha_research_framework.universe import MarketData
+from alpha_research_framework.market_data_view import (
+    MarketArray,
+    MarketDataView,
+)
 from tests.dummy_feature import DummyFeature
 
 
@@ -123,7 +125,7 @@ class TestUniverse(unittest.TestCase):
                 super().__init__()
             def compute(
                 self,
-                market_data: MarketData,
+                market_data: MarketDataView,
                 features: Features,
                 out: MarketArray
             ) -> None:
@@ -137,7 +139,7 @@ class TestUniverse(unittest.TestCase):
                 self.dependencies = {self._a_dependency}
             def compute(
                 self,
-                market_data: MarketData,
+                market_data: MarketDataView,
                 features: Features,
                 out: MarketArray
             ) -> None:

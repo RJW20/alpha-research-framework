@@ -5,8 +5,10 @@ from alpha_research_framework.features.feature_error import FeatureError
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.feature_tag import FeatureTag
 from alpha_research_framework.features.features import Features
-from alpha_research_framework.market_array import MarketArray
-from alpha_research_framework.universe import MarketData
+from alpha_research_framework.market_data_view import (
+    MarketArray,
+    MarketDataView,
+)
 
 
 class Feature(ABC):
@@ -26,7 +28,7 @@ class Feature(ABC):
     @abstractmethod
     def compute(
         self,
-        market_data: MarketData,
+        market_data: MarketDataView,
         features: Features,
         out: MarketArray
     ) -> None:
@@ -68,7 +70,7 @@ class Feature(ABC):
 
         def wrapper(
             self: Feature,
-            market_data: MarketData,
+            market_data: MarketDataView,
             features: Features,
             out: MarketArray
         ) -> None:

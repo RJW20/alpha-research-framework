@@ -3,12 +3,12 @@ from pathlib import Path
 import numpy as np
 
 
-class MarketData:
+class MarketDataStore:
     """
-    Small class holding np.memmaps of market data.
+    Disk-backed market data storage.
     
-    price = adjusted close, split/dividend adjusted
-    volume = adjusted volume, aligned to price
+    price = adjusted close
+    volume = adjusted volume
     """
 
     def __init__(self, path: Path, shape: tuple[int, int]) -> None:
