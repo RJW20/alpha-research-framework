@@ -10,6 +10,7 @@ import pandas as pd
 from alpha_research_framework.data import metadata_path, stocks_path
 from alpha_research_framework.features import Features, FeatureSpec, FeatureTag
 from alpha_research_framework.universe.calendar import Calendar
+from alpha_research_framework.universe.cross_section import CrossSection
 from alpha_research_framework.universe.market_data_store import MarketDataStore
 from alpha_research_framework.window import Window
 
@@ -88,14 +89,14 @@ class Universe:
             values.flush()
             self._features[feature_spec] = values
         
-    def cross_section(self, t: int) -> pd.DataFrame:
+    def cross_section(self, t: int) -> CrossSection:
         """
-        Return a pd.DataFrame containing market data and predictive features for
+        Return a CrossSection containing market data and predictive features for
         all stocks in-universe at time t.
         """
 
         mask = self._mask[t, :]
-        return pd.DataFrame(
+        return CrossSection(
             {
                 "price": self._market_data.price[t, mask],
                 "volume": self._market_data.volume[t, mask],

@@ -162,7 +162,7 @@ class TestUniverse(unittest.TestCase):
 
         universe = self._build_universe()
         x = universe.cross_section(0)
-        self.assertListEqual(list(x.columns), ["price", "volume"])
+        self.assertListEqual(list(x.keys()), ["price", "volume"])
 
     def test_cross_section_features(self) -> None:
         """Verify cross-section includes all predictive features."""
@@ -190,7 +190,7 @@ class TestUniverse(unittest.TestCase):
 
         x = universe.cross_section(0)
         self.assertListEqual(
-            list(x.columns),
+            list(x.keys()),
             ["price", "volume", Predictor.NAME]
         )
 
@@ -206,7 +206,7 @@ class TestUniverse(unittest.TestCase):
             )
 
             x = universe.cross_section(0)
-            self.assertEqual(len(x), included_stocks)
+            self.assertEqual(len(x["price"]), included_stocks)
 
 
 if __name__ == "__main__":

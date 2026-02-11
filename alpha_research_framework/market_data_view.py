@@ -1,9 +1,9 @@
 from typing import Protocol, TypeAlias, Union
 
 import numpy as np
-from numpy.typing import NDArray
+import numpy.typing as npt
 
-MarketArray: TypeAlias = Union[NDArray[np.float32], np.memmap]
+MarketArray: TypeAlias = Union[npt.NDArray[np.float32], np.memmap]
 
 
 class MarketDataView(Protocol):
