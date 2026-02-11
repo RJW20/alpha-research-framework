@@ -136,7 +136,7 @@ class TestUniverse(unittest.TestCase):
             def __init__(self) -> None:
                 super().__init__()
                 self._a_dependency = FeatureSpec(FeatureA, ())
-                self.dependencies = {self._a_dependency}
+                self._dependencies = {self._a_dependency}
             def compute(
                 self,
                 market_data: MarketDataView,

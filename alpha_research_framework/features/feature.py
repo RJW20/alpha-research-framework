@@ -17,13 +17,21 @@ class Feature(ABC):
     TAG: FeatureTag
 
     def __init__(self) -> None:
-        self.name: str
-        self.dependencies: set[FeatureSpec] = set()
+        self._name: str
+        self._dependencies: set[FeatureSpec] = set()
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         cls._wrap_init()
         cls._wrap_compute()
+
+    @property
+    def name(self) -> str:
+        return self._name
+    
+    @property
+    def dependencies(self) -> set[FeatureSpec]:
+        return self._dependencies
 
     @abstractmethod
     def compute(
@@ -50,11 +58,11 @@ class Feature(ABC):
         P = ParamSpec("P")
         def wrapped(self: Feature, *args: P.args, **kwargs: P.kwargs) -> None:
             original(self, *args, **kwargs)
-            for feature_spec in self.dependencies:
+            for feature_spec in self._dependencies:
                 feature = feature_spec.instantiate()
                 if feature.TAG > self.TAG:
                     raise FeatureError(
-                        f"Feature {self.name} cannot be instantiated: it "
+                        f"Feature {self._name} cannot be instantiated: it "
                         f"cannot depend on {feature.name} with higher TAG."
                     )
 
@@ -74,10 +82,10 @@ class Feature(ABC):
             features: Features,
             out: MarketArray
         ) -> None:
-            missing = self.dependencies - features.keys()
+            missing = self._dependencies - features.keys()
             if missing:
                 raise FeatureError(
-                    f"Feature {self.name} cannot be computed: missing "
+                    f"Feature {self._name} cannot be computed: missing "
                     f"dependencies {missing}."
                 )
             return original(self, market_data, features, out)

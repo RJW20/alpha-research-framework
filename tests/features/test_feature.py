@@ -29,22 +29,22 @@ class TestFeature(unittest.TestCase):
         class PredictorOnPredictor(Predictor):
             def __init__(self) -> None:
                 super().__init__()
-                self.dependencies = {FeatureSpec(Predictor, ())}
+                self._dependencies = {FeatureSpec(Predictor, ())}
 
         class PredictorOnTarget(Predictor):
             def __init__(self) -> None:
                 super().__init__()
-                self.dependencies = {FeatureSpec(Target, ())}
+                self._dependencies = {FeatureSpec(Target, ())}
 
         class TargetOnPredictor(Target):
             def __init__(self) -> None:
                 super().__init__()
-                self.dependencies = {FeatureSpec(Predictor, ())}
+                self._dependencies = {FeatureSpec(Predictor, ())}
 
         class TargetOnTarget(Target):
             def __init__(self) -> None:
                 super().__init__()
-                self.dependencies = {FeatureSpec(Target, ())}
+                self._dependencies = {FeatureSpec(Target, ())}
 
         feature = PredictorOnPredictor()
         with self.assertRaises(FeatureError):
@@ -64,7 +64,7 @@ class TestFeature(unittest.TestCase):
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
                 super().__init__()
-                self.dependencies = {FeatureSpec(FeatureA, ())}
+                self._dependencies = {FeatureSpec(FeatureA, ())}
 
         b = FeatureB()
         features = Features()

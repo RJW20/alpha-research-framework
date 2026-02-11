@@ -15,15 +15,14 @@ class FeatureB(DummyFeature):
     TAG = FeatureTag.PREDICTOR
     def __init__(self) -> None:
         super().__init__()
-        self.dependencies = {FeatureSpec(FeatureA, ())}
+        self._dependencies = {FeatureSpec(FeatureA, ())}
 
 
 class FeatureC(DummyFeature):
     TAG = FeatureTag.PREDICTOR
     def __init__(self) -> None:
         super().__init__()
-        self.name = self.NAME
-        self.dependencies = {FeatureSpec(FeatureB, ())}
+        self._dependencies = {FeatureSpec(FeatureB, ())}
 
 
 class TestUniverseFeatureDependencies(unittest.TestCase):

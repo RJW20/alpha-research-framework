@@ -11,7 +11,7 @@ class DummyFeature(Feature):
 
     def __init__(self) -> None:
         super().__init__()
-        self.name = f"{self.NAME}"
+        self._name = f"{self.NAME}"
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
