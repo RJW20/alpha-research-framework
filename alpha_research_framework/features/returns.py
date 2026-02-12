@@ -20,7 +20,7 @@ class Returns(Feature):
     def __init__(self, lookback: Window) -> None:
         super().__init__()
         self._name = f"{self.NAME}_{lookback.value}d"
-        self._log_price_dependency = FeatureSpec(LogPrice, ())
+        self._log_price_dependency = FeatureSpec(LogPrice)
         self._dependencies = {self._log_price_dependency}
         self._lookback = lookback
 

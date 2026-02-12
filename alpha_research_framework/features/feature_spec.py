@@ -23,12 +23,16 @@ class FeatureSpec:
     the underlying feature when needed.
     """
 
-    feature_cls: Type["Feature"]
-    args: Window | tuple[Window,...]
+    cls: Type["Feature"]
+    windows: tuple[Window,...]
 
-    def __post_init__(self) -> None:
-        if isinstance(self.args, Window):
-            object.__setattr__(self, "args", (self.args,))
+    def __init__(
+        self,
+        cls: Type["Feature"],
+        *windows: tuple[Window,...]
+    ) -> None:
+        object.__setattr__(self, "cls", cls)
+        object.__setattr__(self, "windows", windows)
     
     @property
     def name(self) -> str:
@@ -50,4 +54,4 @@ class FeatureSpec:
         
     @cached_property
     def _underlying(self) -> "Feature":
-        return self.feature_cls(*self.args)
+        return self.cls(*self.windows)

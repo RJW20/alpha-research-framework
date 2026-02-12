@@ -21,7 +21,7 @@ class FutureReturns(Feature):
     def __init__(self, horizon: Window) -> None:
         super().__init__()
         self._name = f"{self.NAME}_{horizon.value}d"
-        self._log_price_dependency = FeatureSpec(LogPrice, ())
+        self._log_price_dependency = FeatureSpec(LogPrice)
         self._dependencies = {self._log_price_dependency}
         self.horizon = horizon
 
