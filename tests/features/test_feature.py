@@ -71,8 +71,8 @@ class TestFeature(unittest.TestCase):
         with self.assertRaises(FeatureError):
             b.compute({}, features, np.ndarray(shape=(10,)))
 
-        for feature_spec in b.dependencies:
-            features[feature_spec] = np.ndarray(shape=(10,))
+        for feature in b.dependencies:
+            features[feature] = np.ndarray(shape=(10,))
 
         b.compute({}, features, np.ndarray(shape=(10,)))
 

@@ -58,9 +58,8 @@ class Feature(ABC):
         P = ParamSpec("P")
         def wrapped(self: Feature, *args: P.args, **kwargs: P.kwargs) -> None:
             original(self, *args, **kwargs)
-            for feature_spec in self._dependencies:
-                feature = feature_spec.instantiate()
-                if feature.TAG > self.TAG:
+            for feature in self._dependencies:
+                if feature.tag > self.TAG:
                     raise FeatureError(
                         f"Feature {self._name} cannot be instantiated: it "
                         f"cannot depend on {feature.name} with higher TAG."

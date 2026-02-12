@@ -77,8 +77,7 @@ class Universe:
         features = self._expand_dependencies(features)
         ordered_features = self._order_dependencies(features)
         
-        for feature_spec in ordered_features:
-            feature = feature_spec.instantiate()
+        for feature in ordered_features:
             values = np.memmap(
                 self.path / f"{feature.name}.dat",
                 dtype=np.float32,
@@ -87,7 +86,7 @@ class Universe:
             )
             feature.compute(self._market_data, self._features, values)
             values.flush()
-            self._features[feature_spec] = values
+            self._features[feature] = values
         
     def cross_section(self, t: int) -> CrossSection:
         """
@@ -104,13 +103,8 @@ class Universe:
             |
             {
                 feature.name: values[t, mask]
-                for feature, values in zip(
-                    [
-                        feature_spec.instantiate()
-                        for feature_spec in self._features.keys()
-                    ],
-                    self._features.values()
-                ) if feature.TAG == FeatureTag.PREDICTOR
+                for feature, values in self._features.items()
+                if feature.tag == FeatureTag.PREDICTOR
             }
         )
 
@@ -206,10 +200,9 @@ class Universe:
         expanded: set[FeatureSpec] = set()
         to_expand = set(features)
         while to_expand:
-            feature_spec = to_expand.pop()
-            if feature_spec not in expanded:
-                expanded.add(feature_spec)
-                feature = feature_spec.instantiate()
+            feature = to_expand.pop()
+            if feature not in expanded:
+                expanded.add(feature)
                 to_expand |= feature.dependencies
         return expanded
     
@@ -217,9 +210,8 @@ class Universe:
     def _order_dependencies(
         features: Iterable[FeatureSpec]
     ) -> Iterable[FeatureSpec]:
-        features = {
-            feature_spec: feature_spec.instantiate().dependencies
-            for feature_spec in features
+        features_and_dependencies = {
+            feature: feature.dependencies for feature in features
         }
-        ts = TopologicalSorter(features)
+        ts = TopologicalSorter(features_and_dependencies)
         return ts.static_order()
