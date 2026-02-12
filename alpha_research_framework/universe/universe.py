@@ -5,10 +5,16 @@ from graphlib import TopologicalSorter
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from alpha_research_framework.data import metadata_path, stocks_path
-from alpha_research_framework.features import Features, FeatureSpec, FeatureTag
+from alpha_research_framework.features import (
+    Features,
+    FeatureSpec,
+    FeatureTag,
+    FutureReturns,
+)
 from alpha_research_framework.universe.calendar import Calendar
 from alpha_research_framework.universe.cross_section import CrossSection
 from alpha_research_framework.universe.market_data_store import MarketDataStore
@@ -107,6 +113,19 @@ class Universe:
                 if feature.tag == FeatureTag.PREDICTOR
             }
         )
+    
+    def future_returns(self, t: int) -> dict[Window, npt.NDArray[np.float32]]:
+        """
+        Return a dictionary mapping horizon to future returns over that horizon
+        for all stocks in-universe at time t.
+        """
+
+        mask = self._mask[t, :]
+        return {
+            feature.windows[0]: values[t, mask]
+            for feature, values in self._features.items()
+            if feature.cls == FutureReturns
+        }
 
     # Private helpers
 

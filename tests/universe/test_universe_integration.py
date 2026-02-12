@@ -8,9 +8,14 @@ import numpy as np
 import pandas as pd
 import pandas_market_calendars as mcal
 
-from alpha_research_framework import Universe
+from alpha_research_framework import Universe, Window
 from alpha_research_framework.data import metadata_path, stocks_path
-from alpha_research_framework.features import Features, FeatureSpec, FeatureTag
+from alpha_research_framework.features import (
+    Features,
+    FeatureSpec,
+    FeatureTag,
+    FutureReturns,
+)
 from alpha_research_framework.market_data_view import (
     MarketArray,
     MarketDataView,
@@ -207,6 +212,39 @@ class TestUniverse(unittest.TestCase):
 
             x = universe.cross_section(0)
             self.assertEqual(len(x["price"]), included_stocks)
+
+    def test_future_returns_horizons(self) -> None:
+        """Verify future returns includes all horizons."""
+
+        universe = self._build_universe()
+
+        for horizon in Window:
+            universe._features[FeatureSpec(FutureReturns, horizon)] = np.ones(
+                self.shape,
+                dtype=np.float32
+            )
+        
+        fut_ret = universe.future_returns(0)
+        self.assertListEqual(list(fut_ret.keys()), list(Window))
+
+    def test_future_returns_mask(self) -> None:
+        """Verify future returns is masked correctly."""
+        
+        universe = self._build_universe()
+
+        universe._features[FeatureSpec(FutureReturns, Window.DAY)] = np.ones(
+                self.shape,
+                dtype=np.float32
+            )
+
+        for removed_stocks in range(0, self.shape[1]):
+            included_stocks = self.shape[1] - removed_stocks
+            universe._mask[:, :] = np.array(
+                [False] * removed_stocks + [True] * included_stocks
+            )
+
+            fut_ret = universe.future_returns(0)
+            self.assertEqual(len(fut_ret[Window.DAY]), included_stocks)
 
 
 if __name__ == "__main__":
