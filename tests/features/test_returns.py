@@ -19,7 +19,7 @@ class TestReturns(unittest.TestCase):
             T = lookback.value * 10
             returns = Returns(lookback)
             log_prices = np.arange(T, dtype=np.float32)
-            features = {FeatureSpec(LogPrice, ()): log_prices}
+            features = {FeatureSpec(LogPrice): log_prices}
             out = np.empty_like(log_prices, dtype=np.float32)
 
             returns.compute({}, features, out)

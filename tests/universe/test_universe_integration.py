@@ -135,7 +135,7 @@ class TestUniverse(unittest.TestCase):
             TAG = FeatureTag.PREDICTOR
             def __init__(self) -> None:
                 super().__init__()
-                self._a_dependency = FeatureSpec(FeatureA, ())
+                self._a_dependency = FeatureSpec(FeatureA)
                 self._dependencies = {self._a_dependency}
             def compute(
                 self,
@@ -145,7 +145,7 @@ class TestUniverse(unittest.TestCase):
             ) -> None:
                 out[:] = features[self._a_dependency][:] * 2
 
-        universe.build_features([FeatureSpec(FeatureB, ())])
+        universe.build_features([FeatureSpec(FeatureB)])
 
         self.assertTrue((self.path / f"{FeatureA.NAME}.dat").exists())
         feature_a = self._open_memmap(f"{FeatureA.NAME}", np.float32)
@@ -179,11 +179,11 @@ class TestUniverse(unittest.TestCase):
             def __init__(self) -> None:
                 super().__init__()
 
-        universe._features[FeatureSpec(Predictor, ())] = np.ones(
+        universe._features[FeatureSpec(Predictor)] = np.ones(
             self.shape,
             dtype=np.float32
         )
-        universe._features[FeatureSpec(Target, ())] = np.ones(
+        universe._features[FeatureSpec(Target)] = np.ones(
             self.shape,
             dtype=np.float32
         )

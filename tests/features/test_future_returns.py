@@ -23,7 +23,7 @@ class TestFutureReturns(unittest.TestCase):
             T = horizon.value * 10
             future_returns = FutureReturns(horizon)
             log_prices = np.arange(T, dtype=np.float32)
-            features = {FeatureSpec(LogPrice, ()): log_prices}
+            features = {FeatureSpec(LogPrice): log_prices}
             out = np.empty_like(log_prices, dtype=np.float32)
 
             future_returns.compute({}, features, out)

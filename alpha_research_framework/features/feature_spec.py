@@ -26,11 +26,7 @@ class FeatureSpec:
     cls: Type["Feature"]
     windows: tuple[Window,...]
 
-    def __init__(
-        self,
-        cls: Type["Feature"],
-        *windows: tuple[Window,...]
-    ) -> None:
+    def __init__(self, cls: Type["Feature"], *windows: Window) -> None:
         object.__setattr__(self, "cls", cls)
         object.__setattr__(self, "windows", windows)
     

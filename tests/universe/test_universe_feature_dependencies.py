@@ -15,22 +15,22 @@ class FeatureB(DummyFeature):
     TAG = FeatureTag.PREDICTOR
     def __init__(self) -> None:
         super().__init__()
-        self._dependencies = {FeatureSpec(FeatureA, ())}
+        self._dependencies = {FeatureSpec(FeatureA)}
 
 
 class FeatureC(DummyFeature):
     TAG = FeatureTag.PREDICTOR
     def __init__(self) -> None:
         super().__init__()
-        self._dependencies = {FeatureSpec(FeatureB, ())}
+        self._dependencies = {FeatureSpec(FeatureB)}
 
 
 class TestUniverseFeatureDependencies(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.a = FeatureSpec(FeatureA, ())
-        self.b = FeatureSpec(FeatureB, ())
-        self.c = FeatureSpec(FeatureC, ())
+        self.a = FeatureSpec(FeatureA)
+        self.b = FeatureSpec(FeatureB)
+        self.c = FeatureSpec(FeatureC)
         
     def test_expand_dependencies_transitive(self) -> None:
         expanded = Universe._expand_dependencies([self.c])
