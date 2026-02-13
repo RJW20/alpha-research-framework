@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import ParamSpec
 
+import numpy as np
+from numba import njit
+
 from alpha_research_framework.features.feature_error import FeatureError
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.feature_tag import FeatureTag
@@ -90,3 +93,69 @@ class Feature(ABC):
             return original(self, market_data, features, out)
 
         setattr(cls, "compute", wrapper)
+
+    @staticmethod
+    @njit
+    def _rolling_std(
+        values: MarketArray,
+        lookback: int,
+        out: MarketArray
+    ) -> None:
+        """
+        Populate out with the rolling standard deviation of values over the
+        given lookback period.
+        
+        Calculated with Bessel correction, ignoring NaNs.
+        Implemented with memory-efficient streaming.
+        Optimised for Numba.
+        """
+
+        T, N = values.shape
+        out[:lookback - 1] = np.nan
+
+        s = np.zeros(N, dtype=np.float64)
+        s2 = np.zeros(N, dtype=np.float64)
+        obs = np.zeros(N, dtype=np.int64)
+
+        # First windows < lookback
+        for t in range(lookback):
+
+            vt = values[t]
+            for j in range(N):
+                v = vt[j]
+                if not np.isnan(v):
+                    s[j] += v
+                    s2[j] += v * v
+                    obs[j] += 1
+
+            for j in range(N):
+                n = obs[j]
+                if n > 1:
+                    out[t, j] = np.sqrt((s2[j] - (s[j] * s[j]) / n) / (n - 1))
+                else:
+                    out[t, j] = np.nan
+
+        # Rolling updates
+        for t in range(lookback, T):
+            vt_old = values[t - lookback]
+            vt_new = values[t]
+
+            for j in range(N):
+
+                v_old = vt_old[j]
+                if not np.isnan(v_old):
+                    s[j] -= v_old
+                    s2[j] -= v_old * v_old
+                    obs[j] -= 1
+
+                v_new = vt_new[j]
+                if not np.isnan(v_new):
+                    s[j] += v_new
+                    s2[j] += v_new * v_new
+                    obs[j] += 1
+
+                n = obs[j]
+                if n > 1:
+                    out[t, j] = np.sqrt((s2[j] - (s[j] * s[j]) / n) / (n - 1))
+                else:
+                    out[t, j] = np.nan

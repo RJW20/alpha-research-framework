@@ -1,8 +1,10 @@
 import unittest
 
 import numpy as np
+import pandas as pd
 
 from alpha_research_framework.features import (
+    Feature,
     FeatureError,
     Features,
     FeatureSpec,
@@ -75,6 +77,27 @@ class TestFeature(unittest.TestCase):
             features[feature] = np.ndarray(shape=(10,))
 
         b.compute({}, features, np.ndarray(shape=(10,)))
+
+    def test_rolling_std(self) -> None:
+        """
+        Verify rolling std calculation is same as pandas built in dataframe
+        version.
+        """
+
+        rng = np.random.default_rng(0)
+        x = rng.uniform(0, 10, (10000, 10)).astype(np.float32)
+        nan_mask = rng.uniform(size=x.shape) < 0.1
+        x[nan_mask] = np.nan
+        for lookback in [1, 10, 100, 1000]:
+            out = np.empty_like(x, dtype=np.float32)
+            Feature._rolling_std(x, lookback, out)
+            df = pd.DataFrame(x)
+            expected = df.rolling(lookback, min_periods=1).std()
+            np.testing.assert_array_almost_equal(
+                out,
+                expected.to_numpy(dtype=np.float32),
+                decimal=5
+            )
 
 
 if __name__ == "__main__":
