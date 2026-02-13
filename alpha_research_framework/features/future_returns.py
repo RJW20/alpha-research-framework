@@ -21,8 +21,8 @@ class FutureReturns(Feature):
     def __init__(self, horizon: Window) -> None:
         super().__init__()
         self._name = f"{self.NAME}_{horizon.value}d"
-        self._log_price_dependency = FeatureSpec(LogPrice)
-        self._dependencies = {self._log_price_dependency}
+        self._log_price = FeatureSpec(LogPrice)
+        self._dependencies = {self._log_price}
         self.horizon = horizon
 
     def compute(
@@ -35,6 +35,6 @@ class FutureReturns(Feature):
 
         start = self._ENTRY_LAG
         end = self._ENTRY_LAG + self.horizon.value
-        log_price = features[self._log_price_dependency]
+        log_price = features[self._log_price]
         out[:-end] = log_price[end:] - log_price[start:-end + start]
         out[-end:] = np.nan

@@ -20,8 +20,8 @@ class Returns(Feature):
     def __init__(self, lookback: Window) -> None:
         super().__init__()
         self._name = f"{self.NAME}_{lookback.value}d"
-        self._log_price_dependency = FeatureSpec(LogPrice)
-        self._dependencies = {self._log_price_dependency}
+        self._log_price = FeatureSpec(LogPrice)
+        self._dependencies = {self._log_price}
         self._lookback = lookback
 
     def compute(
@@ -33,6 +33,6 @@ class Returns(Feature):
         """r_t = log(p_t) - log(p_{t-lookback})"""
 
         lookback = self._lookback.value
-        log_price = features[self._log_price_dependency]
+        log_price = features[self._log_price]
         out[:lookback] = np.nan
         out[lookback:] = log_price[lookback:] - log_price[:-lookback]
