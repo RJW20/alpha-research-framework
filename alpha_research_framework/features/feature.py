@@ -111,8 +111,6 @@ class Feature(ABC):
         """
 
         T, N = values.shape
-        out[:lookback - 1] = np.nan
-
         s = np.zeros(N, dtype=np.float64)
         s2 = np.zeros(N, dtype=np.float64)
         obs = np.zeros(N, dtype=np.int64)

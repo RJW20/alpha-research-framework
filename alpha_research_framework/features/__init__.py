@@ -6,3 +6,4 @@ from .features import Features
 from .future_returns import FutureReturns
 from .log_price import LogPrice
 from .returns import Returns
+from .volatility import Volatility
