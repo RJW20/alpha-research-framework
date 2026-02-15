@@ -73,6 +73,11 @@ class Universe:
         self._flush()
         self._features = Features()
 
+    @property
+    def dates(self) -> pd.Index:
+        """Return all dates with valid market data."""
+        return self._calendar.index
+
     def build_features(self, features: Iterable[FeatureSpec]) -> None:
         """
         Build the requested features for every timestamp and stock.
@@ -94,12 +99,13 @@ class Universe:
             values.flush()
             self._features[feature] = values
         
-    def cross_section(self, t: int) -> CrossSection:
+    def cross_section(self, date: pd.Timestamp) -> CrossSection:
         """
         Return a CrossSection containing market data and predictive features for
-        all stocks in-universe at time t.
+        all stocks in-universe at the given date.
         """
 
+        t = self._calendar.t(date)
         mask = self._mask[t, :]
         return CrossSection(
             {
@@ -114,12 +120,16 @@ class Universe:
             }
         )
     
-    def future_returns(self, t: int) -> dict[Window, npt.NDArray[np.float32]]:
+    def future_returns(
+        self,
+        date: pd.Timestamp
+    ) -> dict[Window, npt.NDArray[np.float32]]:
         """
         Return a dictionary mapping horizon to future returns over that horizon
-        for all stocks in-universe at time t.
+        for all stocks in-universe at the given date.
         """
 
+        t = self._calendar.t(date)
         mask = self._mask[t, :]
         return {
             feature.windows[0]: values[t, mask]

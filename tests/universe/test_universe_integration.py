@@ -160,7 +160,7 @@ class TestUniverse(unittest.TestCase):
         """Verify cross-section includes all market data."""
 
         universe = self._build_universe()
-        x = universe.cross_section(0)
+        x = universe.cross_section(universe.dates[0])
         self.assertListEqual(list(x.keys()), ["price", "volume"])
 
     def test_cross_section_features(self) -> None:
@@ -183,7 +183,7 @@ class TestUniverse(unittest.TestCase):
             dtype=np.float32
         )
 
-        x = universe.cross_section(0)
+        x = universe.cross_section(universe.dates[0])
         self.assertListEqual(
             list(x.keys()),
             ["price", "volume", Predictor.__name__]
@@ -200,7 +200,7 @@ class TestUniverse(unittest.TestCase):
                 [False] * removed_stocks + [True] * included_stocks
             )
 
-            x = universe.cross_section(0)
+            x = universe.cross_section(universe.dates[0])
             self.assertEqual(len(x["price"]), included_stocks)
 
     def test_future_returns_horizons(self) -> None:
@@ -214,7 +214,7 @@ class TestUniverse(unittest.TestCase):
                 dtype=np.float32
             )
         
-        fut_ret = universe.future_returns(0)
+        fut_ret = universe.future_returns(universe.dates[0])
         self.assertListEqual(list(fut_ret.keys()), list(Window))
 
     def test_future_returns_mask(self) -> None:
@@ -233,7 +233,7 @@ class TestUniverse(unittest.TestCase):
                 [False] * removed_stocks + [True] * included_stocks
             )
 
-            fut_ret = universe.future_returns(0)
+            fut_ret = universe.future_returns(universe.dates[0])
             self.assertEqual(len(fut_ret[Window.DAY]), included_stocks)
 
 

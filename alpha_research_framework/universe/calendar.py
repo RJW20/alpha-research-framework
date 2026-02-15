@@ -14,8 +14,13 @@ class Calendar:
     def __init__(self, start_date: str, end_date: str) -> None:
         nyse = mcal.get_calendar('NYSE')
         schedule = nyse.schedule(start_date, end_date)
-        self.index = schedule.index.astype('datetime64[ms]')
+        self.index: pd.Index[pd.Timestamp] = schedule.index.astype(
+            'datetime64[ms]'
+        )
         self.T: int = len(self.index)
 
     def date(self, t: int) -> pd.Timestamp:
         return self.index[t]
+    
+    def t(self, date: pd.Timestamp):
+        return self.index.get_loc(date)
