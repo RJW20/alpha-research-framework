@@ -1,3 +1,3 @@
 class FeatureError(Exception):
-    """Custom exceptions for errors relating to Features."""
+    """Custom exception for errors relating to features."""
     pass

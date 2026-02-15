@@ -1,4 +1,6 @@
-from alpha_research_framework.features import Feature, Features
+from functools import cached_property
+
+from alpha_research_framework.features import Feature, Features, FeatureSpec
 from alpha_research_framework.market_data_view import (
     MarketArray,
     MarketDataView,
@@ -6,17 +8,19 @@ from alpha_research_framework.market_data_view import (
 
 
 class DummyFeature(Feature):
+    """Dummy feature that enables class-level dependencies for easy testing."""
 
-    NAME: str = "dummy"
+    __dependencies__: set[FeatureSpec] = set()
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._name = f"{self.NAME}"
+    TAG = Feature.Tag.PREDICTOR
 
-    def __init_subclass__(cls) -> None:
-        super().__init_subclass__()
-        cls.NAME = cls.NAME + "_" + cls.__name__.lower()
-
+    @cached_property
+    def name(self) -> str:
+        return self.__class__.__name__
+    
+    def _init_dependencies(self) -> set[FeatureSpec]:
+        return self.__dependencies__
+    
     def compute(
         self,
         market_data: MarketDataView,

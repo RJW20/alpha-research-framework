@@ -3,50 +3,47 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from alpha_research_framework.features import (
-    Feature,
-    FeatureError,
-    Features,
-    FeatureSpec,
-    FeatureTag,
-)
+from alpha_research_framework.features import Feature, Features, FeatureSpec
+from alpha_research_framework.features.feature_error import FeatureError
 from tests.dummy_feature import DummyFeature
 
 
-class TestFeature(unittest.TestCase):
+class TestFeatureSubClassValidation(unittest.TestCase):
 
-    def test_dependencies_tag(self) -> None:
+    def test_tag(self) -> None:
+        """Verify definition and type of TAG validated when subclassing."""
+
+        with self.assertRaises(FeatureError):
+            class Dummy(Feature):
+                pass
+
+        with self.assertRaises(TypeError):
+            class Dummy(Feature):
+                TAG = 1
+
+
+class TestFeatureDependencies(unittest.TestCase):
+
+    def test_init_tag(self) -> None:
         """Verify __init__ method wrapper checks dependency TAGs."""
 
         class Predictor(DummyFeature):
-            TAG = FeatureTag.PREDICTOR
-            def __init__(self) -> None:
-                super().__init__()
+            TAG = Feature.Tag.PREDICTOR
 
         class Target(DummyFeature):
-            TAG = FeatureTag.TARGET
-            def __init__(self) -> None:
-                super().__init__()
+            TAG = Feature.Tag.TARGET
 
         class PredictorOnPredictor(Predictor):
-            def __init__(self) -> None:
-                super().__init__()
-                self._dependencies = {FeatureSpec(Predictor)}
+            __dependencies__ = {FeatureSpec(Predictor)}
 
         class PredictorOnTarget(Predictor):
-            def __init__(self) -> None:
-                super().__init__()
-                self._dependencies = {FeatureSpec(Target)}
+            __dependencies__ = {FeatureSpec(Target)}
 
         class TargetOnPredictor(Target):
-            def __init__(self) -> None:
-                super().__init__()
-                self._dependencies = {FeatureSpec(Predictor)}
+            __dependencies__ = {FeatureSpec(Predictor)}
 
         class TargetOnTarget(Target):
-            def __init__(self) -> None:
-                super().__init__()
-                self._dependencies = {FeatureSpec(Target)}
+            __dependencies__ = {FeatureSpec(Target)}
 
         feature = PredictorOnPredictor()
         with self.assertRaises(FeatureError):
@@ -54,19 +51,14 @@ class TestFeature(unittest.TestCase):
         feature = TargetOnPredictor()
         feature = TargetOnTarget()
 
-    def test_dependencies_existence(self) -> None:
+    def test_compute_existence(self) -> None:
         """Verify compute method wrapper checks dependency existence."""
 
         class FeatureA(DummyFeature):
-            TAG = FeatureTag.PREDICTOR
-            def __init__(self) -> None:
-                super().__init__()
+            pass
 
         class FeatureB(DummyFeature):
-            TAG = FeatureTag.PREDICTOR
-            def __init__(self) -> None:
-                super().__init__()
-                self._dependencies = {FeatureSpec(FeatureA)}
+            __dependencies__ = {FeatureSpec(FeatureA)}
 
         b = FeatureB()
         features = Features()
@@ -77,6 +69,9 @@ class TestFeature(unittest.TestCase):
             features[feature] = np.ndarray(shape=(10,))
 
         b.compute({}, features, np.ndarray(shape=(10,)))
+
+
+class TestFeatureCalculations(unittest.TestCase):
 
     def test_rolling_std(self) -> None:
         """

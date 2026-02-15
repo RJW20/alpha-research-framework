@@ -11,9 +11,9 @@ import pandas_market_calendars as mcal
 from alpha_research_framework import Universe, Window
 from alpha_research_framework.data import metadata_path, stocks_path
 from alpha_research_framework.features import (
+    Feature,
     Features,
     FeatureSpec,
-    FeatureTag,
     FutureReturns,
 )
 from alpha_research_framework.market_data_view import (
@@ -125,9 +125,6 @@ class TestUniverse(unittest.TestCase):
         universe = self._build_universe()
 
         class FeatureA(DummyFeature):
-            TAG = FeatureTag.PREDICTOR
-            def __init__(self) -> None:
-                super().__init__()
             def compute(
                 self,
                 market_data: MarketDataView,
@@ -137,28 +134,25 @@ class TestUniverse(unittest.TestCase):
                 out[:] = np.ones(out.shape)
 
         class FeatureB(DummyFeature):
-            TAG = FeatureTag.PREDICTOR
-            def __init__(self) -> None:
-                super().__init__()
-                self._a_dependency = FeatureSpec(FeatureA)
-                self._dependencies = {self._a_dependency}
+            __a_dependency__ = FeatureSpec(FeatureA)
+            __dependencies__ = {__a_dependency__}
             def compute(
                 self,
                 market_data: MarketDataView,
                 features: Features,
                 out: MarketArray
             ) -> None:
-                out[:] = features[self._a_dependency][:] * 2
+                out[:] = features[self.__a_dependency__][:] * 2
 
         universe.build_features([FeatureSpec(FeatureB)])
 
-        self.assertTrue((self.path / f"{FeatureA.NAME}.dat").exists())
-        feature_a = self._open_memmap(f"{FeatureA.NAME}", np.float32)
+        self.assertTrue((self.path / f"{FeatureA.__name__}.dat").exists())
+        feature_a = self._open_memmap(f"{FeatureA.__name__}", np.float32)
         self.assertEqual(feature_a.shape, self.shape)
         np.testing.assert_array_equal(feature_a, np.ones(self.shape))
 
-        self.assertTrue((self.path / f"{FeatureB.NAME}.dat").exists())
-        feature_2 = self._open_memmap(f"{FeatureB.NAME}", np.float32)
+        self.assertTrue((self.path / f"{FeatureB.__name__}.dat").exists())
+        feature_2 = self._open_memmap(f"{FeatureB.__name__}", np.float32)
         self.assertEqual(feature_2.shape, self.shape)
         np.testing.assert_array_equal(feature_2, np.ones(self.shape) * 2)
 
@@ -175,14 +169,10 @@ class TestUniverse(unittest.TestCase):
         universe = self._build_universe()
 
         class Predictor(DummyFeature):
-            TAG = FeatureTag.PREDICTOR
-            def __init__(self) -> None:
-                super().__init__()
+            TAG = Feature.Tag.PREDICTOR
 
         class Target(DummyFeature):
-            TAG = FeatureTag.TARGET
-            def __init__(self) -> None:
-                super().__init__()
+            TAG = Feature.Tag.TARGET
 
         universe._features[FeatureSpec(Predictor)] = np.ones(
             self.shape,
@@ -196,7 +186,7 @@ class TestUniverse(unittest.TestCase):
         x = universe.cross_section(0)
         self.assertListEqual(
             list(x.keys()),
-            ["price", "volume", Predictor.NAME]
+            ["price", "volume", Predictor.__name__]
         )
 
     def test_cross_section_mask(self) -> None:

@@ -10,9 +10,9 @@ import pandas as pd
 
 from alpha_research_framework.data import metadata_path, stocks_path
 from alpha_research_framework.features import (
+    Feature,
     Features,
     FeatureSpec,
-    FeatureTag,
     FutureReturns,
 )
 from alpha_research_framework.universe.calendar import Calendar
@@ -110,7 +110,7 @@ class Universe:
             {
                 feature.name: values[t, mask]
                 for feature, values in self._features.items()
-                if feature.tag == FeatureTag.PREDICTOR
+                if feature.tag == Feature.Tag.PREDICTOR
             }
         )
     

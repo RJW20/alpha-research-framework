@@ -1,28 +1,20 @@
 import unittest
 
 from alpha_research_framework import Universe
-from alpha_research_framework.features import FeatureSpec, FeatureTag
+from alpha_research_framework.features import FeatureSpec
 from tests.dummy_feature import DummyFeature
 
 
 class FeatureA(DummyFeature):
-    TAG = FeatureTag.PREDICTOR
-    def __init__(self) -> None:
-        super().__init__()
+    pass
 
 
 class FeatureB(DummyFeature):
-    TAG = FeatureTag.PREDICTOR
-    def __init__(self) -> None:
-        super().__init__()
-        self._dependencies = {FeatureSpec(FeatureA)}
+    __dependencies__ = {FeatureSpec(FeatureA)}
 
 
 class FeatureC(DummyFeature):
-    TAG = FeatureTag.PREDICTOR
-    def __init__(self) -> None:
-        super().__init__()
-        self._dependencies = {FeatureSpec(FeatureB)}
+    __dependencies__ = {FeatureSpec(FeatureB)}
 
 
 class TestUniverseFeatureDependencies(unittest.TestCase):

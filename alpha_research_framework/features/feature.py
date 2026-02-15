@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
+from enum import IntEnum
+from functools import cached_property
 from typing import ParamSpec
 
 import numpy as np
 from numba import njit
 
+from alpha_research_framework.dependent import Dependent
 from alpha_research_framework.features.feature_error import FeatureError
 from alpha_research_framework.features.feature_spec import FeatureSpec
-from alpha_research_framework.features.feature_tag import FeatureTag
 from alpha_research_framework.features.features import Features
 from alpha_research_framework.market_data_view import (
     MarketArray,
@@ -14,27 +16,52 @@ from alpha_research_framework.market_data_view import (
 )
 
 
-class Feature(ABC):
-    """Abstract feature with automatic dependency checking."""
+class Feature(Dependent[FeatureSpec], ABC):
+    """
+    Abstract base class for cross-sectional features with automatic subclass
+    validation and runtime dependency type, tag and existence enforcement.
+    
+    Any concrete subclass must define:
+    - TAG: Feature.Tag - usage classification
+    - @cached_property name(self) -> str - unique identifier
+    - _init_dependencies(self) -> set[FeatureSpec] - prior features this feature
+    uses to compute itself
+    Concrete compute() methods are automatically wrapped to enforce runtime
+    dependency checks.
+    """
 
-    TAG: FeatureTag
+    __dependency_type__ = FeatureSpec
 
-    def __init__(self) -> None:
-        self._name: str
-        self._dependencies: set[FeatureSpec] = set()
+    class Tag(IntEnum):
+        PREDICTOR = 0
+        TARGET = 1
+
+    TAG: Tag | None = None
 
     def __init_subclass__(cls) -> None:
+        """
+        Validate definition and type of TAG and wrap instance methods with
+        runtime dependency checks.
+        """
+
         super().__init_subclass__()
+
+        if cls is Feature:
+            return
+        
+        if cls.TAG is None:
+            raise FeatureError(f"{cls.__name__} must define TAG.")
+        if not isinstance(cls.TAG, Feature.Tag):
+            raise TypeError(f"{cls.__name__}.TAG must be of type Feature.Tag.")
+
         cls._wrap_init()
         cls._wrap_compute()
 
-    @property
+    @cached_property
+    @abstractmethod
     def name(self) -> str:
-        return self._name
-    
-    @property
-    def dependencies(self) -> set[FeatureSpec]:
-        return self._dependencies
+        """Return a unique str identifier."""
+        ...
 
     @abstractmethod
     def compute(
@@ -52,8 +79,8 @@ class Feature(ABC):
     @classmethod
     def _wrap_init(cls) -> None:
         """
-        Wrap the __init__ method with a check to ensure subclasses cannot depend
-        on features with a higher TAG.
+        Wrap __init__ with a check to ensure instances cannot depend on features
+        with a higher TAG.
         """
 
         original = cls.__init__
@@ -64,7 +91,7 @@ class Feature(ABC):
             for feature in self._dependencies:
                 if feature.tag > self.TAG:
                     raise FeatureError(
-                        f"Feature {self._name} cannot be instantiated: it "
+                        f"Feature {self.name} cannot be instantiated: it "
                         f"cannot depend on {feature.name} with higher TAG."
                     )
 
@@ -72,7 +99,7 @@ class Feature(ABC):
 
     @classmethod
     def _wrap_compute(cls) -> None:
-        """Ensure all dependencies are present in the given features."""
+        """Wrap compute() to enforce runtime dependency validation."""
 
         original = getattr(cls, "compute", None)
         if original is None or getattr(original, "__isabstractmethod__", False):
@@ -87,8 +114,8 @@ class Feature(ABC):
             missing = self._dependencies - features.keys()
             if missing:
                 raise FeatureError(
-                    f"Feature {self._name} cannot be computed: missing "
-                    f"dependencies {missing}."
+                    f"Feature {self.name} cannot be computed: missing "
+                    f"dependencies {set(feature.name for feature in missing)}."
                 )
             return original(self, market_data, features, out)
 

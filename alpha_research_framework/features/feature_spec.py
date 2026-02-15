@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, Callable, Type
 
-from alpha_research_framework.features.feature_tag import FeatureTag
 from alpha_research_framework.market_data_view import (
     MarketArray,
     MarketDataView,
@@ -35,11 +34,11 @@ class FeatureSpec:
         return self._underlying.name
     
     @property
-    def tag(self) -> FeatureTag:
+    def tag(self) -> Type["Feature.Tag"]:
         return self._underlying.TAG
     
     @property
-    def dependencies(self) -> set["FeatureSpec"]:
+    def dependencies(self) -> frozenset["FeatureSpec"]:
         return self._underlying.dependencies
     
     @property
