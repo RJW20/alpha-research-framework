@@ -239,8 +239,6 @@ class Universe:
     def _order_dependencies(
         features: Iterable[FeatureSpec]
     ) -> Iterable[FeatureSpec]:
-        features_and_dependencies = {
-            feature: feature.dependencies for feature in features
-        }
+        features_and_dependencies = {f: f.dependencies for f in features}
         ts = TopologicalSorter(features_and_dependencies)
         return ts.static_order()

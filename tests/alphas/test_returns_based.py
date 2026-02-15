@@ -103,7 +103,7 @@ class TestReturnsBasedCompute(unittest.TestCase):
                     x[returns_lookback.name]
                 )
             
-            for skip in [window for window in Window if window < lookback]:
+            for skip in [w for w in Window if w < lookback]:
 
                 returns_skip = Returns(skip)
                 x[returns_skip.name] = \

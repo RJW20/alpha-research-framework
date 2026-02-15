@@ -60,7 +60,7 @@ class Dependent(ABC, Generic[T]):
         if (
             not isinstance(dependencies, set) or
             not all(
-                isinstance(f, cls.__dependency_type__) for f in dependencies
+                isinstance(d, cls.__dependency_type__) for d in dependencies
             )
         ):
             raise TypeError(

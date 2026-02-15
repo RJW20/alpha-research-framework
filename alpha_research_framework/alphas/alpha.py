@@ -82,10 +82,7 @@ class Alpha(Dependent[FeatureSpec], ABC):
         """
         return set(
             self.dependencies |
-            set(
-                FeatureSpec(FutureReturns, horizon)
-                for horizon in self.HORIZONS
-            )
+            set(FeatureSpec(FutureReturns, h) for h in self.HORIZONS)
         )
 
     @abstractmethod
