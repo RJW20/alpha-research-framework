@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class Window(Enum):
+class Window(IntEnum):
     """Enum defining the number of trading days within common time-periods."""
 
     DAY = 1
