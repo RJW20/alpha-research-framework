@@ -7,9 +7,10 @@ from typing import Any, Iterable
 import pandas as pd
 import yfinance as yf
 
-from alpha_research_framework.data.structure import (
+from alpha_research_framework.equity_data.structure import (
     log_path,
     metadata_path,
+    stock_path,
     stocks_path,
 )
 
@@ -104,7 +105,7 @@ def download(
             ]
 
             # Write parquet
-            out_path = STOCKS_PATH / f"{ticker}.parquet"
+            out_path = stock_path(dest, ticker)
             df.to_parquet(
                 out_path,
                 engine="pyarrow",
