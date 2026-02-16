@@ -1,4 +1,3 @@
-import json
 import shutil
 from collections.abc import Iterable
 from graphlib import TopologicalSorter
@@ -8,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from alpha_research_framework.data import metadata_path, stocks_path
+from alpha_research_framework.equity_data import EquityData
 from alpha_research_framework.features import (
     Feature,
     Features,
@@ -33,8 +32,8 @@ class Universe:
 
     def __init__(
         self,
-        src: Path,
         path: Path,
+        equity_data: EquityData,
         liquidity_threshold: float,
         mcap_threshold: float,
         lookback: Window = Window.MONTH,
@@ -42,26 +41,21 @@ class Universe:
         """
         Initialise the universe and create all required memmapped arrays.
 
-        Loads per-stock data from src, constructs a global trading calendar,
-        writes time * stock arrays to disk, and computes the in-universe mask
-        using existence, liquidity, and market cap filters.
+        Loads per-stock data from equity_data, constructs a global trading
+        calendar, writes time * stock arrays to disk, and computes the in-
+        universe mask using existence, liquidity, and market cap filters.
         """
 
         self.path = path
         self._prepare_path(path)
 
-        self._metadata = self._load_metadata(src)
-        self._calendar = self._build_calendar(self._metadata)
-
-        tickers = list(self._metadata["tickers"].keys())
-        self.shape = (self._calendar.T, len(tickers))
-
+        self._calendar = Calendar(equity_data.dates)
+        self.shape = (self._calendar.T, len(equity_data.tickers))
         self._market_data, self._mask = self._allocate_storage(path, self.shape)
-        
-        for col, ticker in enumerate(tickers):
-            df = self._load_stock_frame(src, ticker)
+        for col, ticker in enumerate(equity_data.tickers):
+            info, df = equity_data.load_stock(ticker)
             self._market_data[:, col] = self._compute_market_data(df)
-            shares = self._metadata["tickers"][ticker]["shares_outstanding"]
+            shares = info["shares_outstanding"]
             self._mask[:, col] = self._compute_mask(
                 df,
                 shares,
@@ -143,18 +137,6 @@ class Universe:
     def _prepare_path(path: Path) -> None:
         shutil.rmtree(path, ignore_errors=True)
         path.mkdir(parents=True, exist_ok=False)
-
-    @staticmethod
-    def _load_metadata(src: Path) -> dict:
-        with (metadata_path(src)).open() as f:
-            return json.load(f)
-
-    @staticmethod
-    def _build_calendar(metadata: dict) -> Calendar:
-        return Calendar(
-            metadata["start_date"],
-            metadata["end_date"]
-        )
     
     @staticmethod
     def _allocate_storage(
@@ -169,10 +151,6 @@ class Universe:
             shape=shape,
         )
         return market_data, mask
-    
-    def _load_stock_frame(self, src: Path, ticker: str) -> pd.DataFrame:
-        df = pd.read_parquet(stocks_path(src) / f"{ticker}.parquet")
-        return df.reindex(self._calendar.index)
     
     @staticmethod
     def _compute_market_data(df: pd.DataFrame) -> tuple[np.ndarray,...]:

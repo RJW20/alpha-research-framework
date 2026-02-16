@@ -1,15 +1,11 @@
-import json
 import unittest
-from functools import cached_property
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import pandas as pd
-import pandas_market_calendars as mcal
 
-from alpha_research_framework import Universe, Window
-from alpha_research_framework.data import metadata_path, stocks_path
+from alpha_research_framework import EquityData, Universe, Window
+from alpha_research_framework.equity_data.metadata import Metadata
 from alpha_research_framework.features import (
     Feature,
     Features,
@@ -21,69 +17,65 @@ from alpha_research_framework.market_data_view import (
     MarketDataView,
 )
 from tests.dummy_feature import DummyFeature
+from tests.utils import create_equity_data_dir
 
 
 class TestUniverse(unittest.TestCase):
 
-    METADATA = {
+    METADATA: Metadata = {
+        "created_at": "N/A",
+        "source": "N/A",
         "start_date": "2020-01-01",
         "end_date": "2020-02-01",
         "tickers": {
-            "AAA": { "shares_outstanding": 100 },
-            "BBB": { "shares_outstanding": 200 }
+            "AAA": {
+                "exchange": "NYSE",
+                "currency": "USD",
+                "sector": "energy",
+                "industry": "thermal coal",
+                "shares_outstanding": 100
+            },
+            "BBB": {
+                "exchange": "NYSE",
+                "currency": "USD",
+                "sector": "energy",
+                "industry": "oil & gas drilling",
+                "shares_outstanding": 100
+            },
+            "CCC": {
+                "exchange": "NYSE",
+                "currency": "USD",
+                "sector": "technology",
+                "industry": "solar",
+                "shares_outstanding": 100
+            },
         }
     }
 
     def setUp(self) -> None:
         """
-        Create temporary src and path directories and write metadata and
-        stock data to the src directory.
+        Create temporary src and path directories and write files to src to make
+        an EquityData instance from.
         """
 
-        self.tmp_dir = TemporaryDirectory()
-        self.src = Path(self.tmp_dir.name) / "src"
-        self.src.mkdir()
-        self.path = Path(self.tmp_dir.name) / "universe"
-
-        self.shape = (len(self.dates), len(self.METADATA["tickers"]))
-        self._write_metadata()
-        stocks_path(self.src).mkdir(parents=True, exist_ok=True)
-        for ticker in self.METADATA["tickers"]:
-            self._write_stock(ticker)
+        self._tmp_dir = TemporaryDirectory()
+        src = Path(self._tmp_dir.name) / "src"
+        src.mkdir()
+        self.path = Path(self._tmp_dir.name) / "universe"
+        create_equity_data_dir(src, self.METADATA)
+        self._equity_data = EquityData(src)
+        self.shape = (
+            len(self._equity_data.dates),
+            len(self._equity_data.tickers)
+        )
 
     def tearDown(self) -> None:
-        self.tmp_dir.cleanup()
-
-    @cached_property
-    def dates(self) -> pd.DatetimeIndex:
-        nyse = mcal.get_calendar('NYSE')
-        schedule = nyse.schedule(
-            start_date=self.METADATA["start_date"],
-            end_date=self.METADATA["end_date"]
-        )
-        return schedule.index.astype('datetime64[ms]')
-
-    def _write_metadata(self) -> None:
-        with (metadata_path(self.src)).open("w") as f:
-            json.dump(self.METADATA, f)
-
-    def _write_stock(self, ticker: str):
-
-        t = self.shape[0]
-        df = pd.DataFrame(
-            {
-                "adj_close": [10.0] * t,
-                "volume": [1_000] * t,
-                "adj_factor": [1.0] * t,
-            },
-            index=self.dates,
-        )
-        df.to_parquet(stocks_path(self.src) / f"{ticker}.parquet")
+        self._tmp_dir.cleanup()
 
     def _build_universe(self) -> Universe:
         return Universe(
-            src=self.src,
             path=self.path,
+            equity_data=self._equity_data,
             liquidity_threshold=0.0,
             mcap_threshold=0.0
         )
