@@ -16,6 +16,7 @@ class ReturnsBased(Alpha):
 
     Any concrete subclass must define:
     - NAME: str - unique identifier
+    - CATEGORY: str - logical grouping label
     - LOOKBACK: Window - period into the past to start tracking returns
     - (optional) SKIP: Window - period into the past to stop tracking returns (
     must be less than LOOKBACK)
@@ -24,8 +25,6 @@ class ReturnsBased(Alpha):
     """
 
     __abstract__ = True
-
-    CATEGORY = "momentum"
 
     LOOKBACK: Window | None = None
     SKIP: Window | None = None

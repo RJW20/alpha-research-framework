@@ -16,14 +16,13 @@ class Volatility(Alpha):
 
     Any concrete subclass must define:
     - NAME: str - unique identifier
+    - CATEGORY: str - logical grouping label
     - LOOKBACK: Window - period into the past to track rolling volatility over
     - HORIZONS: set[Window] - prediction horizons for which the alpha will be
     evaluated
     """
 
     __abstract__ = True
-
-    CATEGORY = "volatility"
 
     LOOKBACK: Window | None = None
 
