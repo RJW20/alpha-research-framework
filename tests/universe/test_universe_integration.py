@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 import numpy as np
 
 from alpha_research_framework import EquityData, Universe, Window
-from alpha_research_framework.equity_data.metadata import Metadata
+from alpha_research_framework.download import Metadata
 from alpha_research_framework.features import (
     Feature,
     Features,
@@ -17,7 +17,7 @@ from alpha_research_framework.market_data_view import (
     MarketDataView,
 )
 from tests.dummy_feature import DummyFeature
-from tests.utils import create_equity_data_dir
+from tests.utils import create_download_dir
 
 
 class TestUniverse(unittest.TestCase):
@@ -62,7 +62,7 @@ class TestUniverse(unittest.TestCase):
         src = Path(self._tmp_dir.name) / "src"
         src.mkdir()
         self.path = Path(self._tmp_dir.name) / "universe"
-        create_equity_data_dir(src, self.METADATA)
+        create_download_dir(src, self.METADATA)
         self._equity_data = EquityData(src)
         self.shape = (
             len(self._equity_data.dates),

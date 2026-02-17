@@ -7,7 +7,8 @@ from typing import Any, Iterable
 import pandas as pd
 import yfinance as yf
 
-from alpha_research_framework.equity_data.structure import (
+from alpha_research_framework.download.metadata import Metadata
+from alpha_research_framework.download.structure import (
     log_path,
     metadata_path,
     stock_path,
@@ -39,21 +40,18 @@ def download(
 
     # Prepare destination directory
     shutil.rmtree(dest, ignore_errors=True)
-    dest.mkdir(parents=True, exist_ok=True)
-    STOCKS_PATH = stocks_path(dest)
-    STOCKS_PATH.mkdir(parents=True, exist_ok=True)
-    METADATA_PATH = metadata_path(dest)
-    LOG_PATH = log_path(dest)
+    dest.mkdir()
+    stocks_path(dest).mkdir()
 
     # Create metadata and log dictionaries
-    metadata = {
+    metadata: Metadata = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "source": "yfinance",
         "start_date": start_date,
         "end_date": end_date,
         "tickers": {}
     }
-    download_log = {}
+    download_log: dict[str, str] = {}
 
     for ticker in tickers:
         try:
@@ -118,8 +116,8 @@ def download(
             metadata["tickers"][ticker] = {
                 "exchange": info.get("exchange"),
                 "currency": info.get("currency"),
-                "sector": info.get("sector"),
-                "industry": info.get("industry"),
+                "sector": info.get("sector").lower().replace('-',' '),
+                "industry": info.get("industry").lower(),
                 "shares_outstanding": info.get("sharesOutstanding"),
             }
 
@@ -128,5 +126,5 @@ def download(
         except Exception as e:
             download_log[ticker] = f"error: {type(e).__name__}"
 
-    _atomic_write_json(METADATA_PATH, metadata)
-    _atomic_write_json(LOG_PATH, download_log)
+    _atomic_write_json(metadata_path(dest), metadata)
+    _atomic_write_json(log_path(dest), download_log)

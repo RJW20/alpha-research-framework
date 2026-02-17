@@ -5,15 +5,16 @@ from pathlib import Path
 import pandas as pd
 import pandas_market_calendars as mcal
 
-from alpha_research_framework.equity_data.metadata import Metadata, StockInfo
+from alpha_research_framework.download import (
+    Metadata,
+    StockInfo,
+    metadata_path,
+    stock_path,
+)
 from alpha_research_framework.equity_data.sector import (
     INDUSTRIES_PER_SECTOR,
     Industry,
     Sector,
-)
-from alpha_research_framework.equity_data.structure import (
-    metadata_path,
-    stock_path,
 )
 
 

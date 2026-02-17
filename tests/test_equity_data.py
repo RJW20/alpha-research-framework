@@ -5,14 +5,13 @@ from tempfile import TemporaryDirectory
 import pandas as pd
 
 from alpha_research_framework import EquityData
-from alpha_research_framework.equity_data.metadata import Metadata, StockInfo
+from alpha_research_framework.download import Metadata, StockInfo, stock_path
 from alpha_research_framework.equity_data.sector import (
     INDUSTRIES_PER_SECTOR,
     Industry,
     Sector,
 )
-from alpha_research_framework.equity_data.structure import stock_path
-from tests.utils import create_equity_data_dir
+from tests.utils import create_download_dir
 
 
 class TestEquityDataSectorIndustry(unittest.TestCase):
@@ -126,7 +125,7 @@ class TestEquityDataTickersDates(unittest.TestCase):
 
         self._tmp_dir = TemporaryDirectory()
         self.src = Path(self._tmp_dir.name)
-        create_equity_data_dir(self.src, self.METADATA)
+        create_download_dir(self.src, self.METADATA)
 
     def tearDown(self) -> None:
         self._tmp_dir.cleanup()

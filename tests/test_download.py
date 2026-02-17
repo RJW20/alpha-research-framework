@@ -6,8 +6,8 @@ from pathlib import Path
 import pandas as pd
 
 from alpha_research_framework import download
-from alpha_research_framework.data import metadata_path, stocks_path
-from alpha_research_framework.data.structure import log_path
+from alpha_research_framework.download import metadata_path, stocks_path
+from alpha_research_framework.download.structure import log_path
 
 DEST = Path("download_test")
 START_DATE = "2020-01-01"
@@ -71,9 +71,9 @@ class TestDownload(unittest.TestCase):
 
         for ticker, info in TICKERS.items():
             if info["has_data"]:
-                self.assertIn(ticker, metadata["tickers"].keys())
+                self.assertIn(ticker, metadata["tickers"])
             else:
-                self.assertNotIn(ticker, metadata["tickers"].keys())
+                self.assertNotIn(ticker, metadata["tickers"])
         
     def test_raw(self) -> None:
         """Verify raw stock data against known data."""

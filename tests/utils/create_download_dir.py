@@ -4,8 +4,8 @@ from pathlib import Path
 import pandas as pd
 import pandas_market_calendars as mcal
 
-from alpha_research_framework.equity_data.metadata import Metadata
-from alpha_research_framework.equity_data.structure import (
+from alpha_research_framework.download import (
+    Metadata,
     metadata_path,
     stock_path,
     stocks_path,
@@ -35,7 +35,7 @@ def _write_stock(root: Path, ticker: str, index: pd.Index) -> None:
     )
     df.to_parquet(stock_path(root, ticker))
 
-def create_equity_data_dir(dest: Path, metadata: Metadata) -> None:
+def create_download_dir(dest: Path, metadata: Metadata) -> None:
     """
     Write metadata and dummy stock data for each ticker in metadata to dest.
     """
