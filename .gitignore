@@ -1,2 +1,6 @@
 __pycache__/
+.ruff_cache
+metadata.json
+download_log.json
+*.parquet
 *.dat
