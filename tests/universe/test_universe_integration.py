@@ -148,6 +148,30 @@ class TestUniverse(unittest.TestCase):
         self.assertEqual(feature_2.shape, self.shape)
         np.testing.assert_array_equal(feature_2, np.ones(self.shape) * 2)
 
+    def test_build_features_duplicate(self) -> None:
+        """Verify already built features are not rebuilt."""
+
+        universe = self._build_universe()
+        rng = np.random.default_rng(0)
+
+        class RandomNoise(DummyFeature):
+            def compute(
+                self,
+                market_data: MarketDataView,
+                features: Features,
+                out: MarketArray
+            ) -> None:
+                out[:] = rng.uniform(0, 10, size=out.shape)
+
+        universe.build_features([FeatureSpec(RandomNoise)])
+        expected = universe._features[FeatureSpec(RandomNoise)]
+        universe.build_features([FeatureSpec(RandomNoise)])
+
+        np.testing.assert_array_equal(
+            universe._features[FeatureSpec(RandomNoise)],
+            expected
+        )
+
     def test_cross_section_market_data(self) -> None:
         """Verify cross-section includes all market data."""
 

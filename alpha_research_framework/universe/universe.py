@@ -77,9 +77,12 @@ class Universe:
         Build the requested features for every timestamp and stock.
         
         Also builds any features they are dependent on.
+        Any features (requested or dependencies) that are already built are
+        skipped.
         """
 
         features = self._expand_dependencies(features)
+        features -= set(self._features.keys())
         ordered_features = self._order_dependencies(features)
         
         for feature in ordered_features:
