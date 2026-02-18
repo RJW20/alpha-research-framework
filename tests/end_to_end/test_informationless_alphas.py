@@ -92,6 +92,7 @@ class TestInformationLessAlphas(unittest.TestCase):
         
     @classmethod
     def tearDownClass(cls) -> None:
+        cls.universe = None
         cls.tmp_dir.cleanup()
 
 
