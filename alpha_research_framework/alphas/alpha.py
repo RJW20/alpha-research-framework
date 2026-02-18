@@ -22,6 +22,8 @@ class Alpha(Dependent[FeatureSpec], ABC):
     evaluated
     - _init_dependencies(self) -> set[FeatureSpec] - features the alpha will
     need to generate a signal
+    - compute(self, x: CrossSection) -> npt.NDArray[np.float32] - signal per
+    stock in cross-section
     Concrete compute() methods are automatically wrapped to enforce runtime
     feature dependency checks.
     """

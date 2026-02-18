@@ -1,1 +1,2 @@
 from .create_download_dir import create_download_dir
+from .e2e_data import require_e2e_data_dir, set_e2e_data_dir
