@@ -21,6 +21,22 @@ class Reversal1d(ReturnsBased):
 
     def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
         return super().compute(x) * -1
+    
+
+class Reversal5d(ReturnsBased):
+    """
+    Hypothesis: large short-term moves are often an overreaction
+    Signal = -returns_5d
+    Horizons = 1d, 5d
+    """
+
+    NAME = "reversal_5d"
+    CATEGORY = "short_term_reversal"
+    LOOKBACK = Window.WEEK
+    HORIZONS = {Window.DAY, Window.WEEK}
+
+    def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+        return super().compute(x) * -1
 
 
 class Momentum12To1(ReturnsBased):
