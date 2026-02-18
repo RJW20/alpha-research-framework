@@ -49,7 +49,7 @@ def download() -> None:
 
     alpha_research_framework.download(
         Path(args.destination),
-        tickers[:2],
+        tickers,
         args.start_date,
         args.years
     )
