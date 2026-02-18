@@ -27,7 +27,7 @@ def download(
     dest: Path,
     tickers: Iterable[str],
     start_date: str,
-    end_date: str
+    years: int
 ) -> None:
     """
     Download per-stock daily data and static metadata.
@@ -37,6 +37,14 @@ def download(
       - dest/metadata.json
       - dest/download_log.json
     """
+
+    # Calculate end date
+    end_date = pd.to_datetime(start_date) + pd.DateOffset(years=years)
+    if end_date > pd.Timestamp.now():
+        raise ValueError(
+            f"Download error: start_date '{start_date}' and years duration "
+            f"'{years} exceeds the current date."
+        )
 
     # Prepare destination directory
     shutil.rmtree(dest, ignore_errors=True)
@@ -48,7 +56,7 @@ def download(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "source": "yfinance",
         "start_date": start_date,
-        "end_date": end_date,
+        "end_date": (end_date - pd.DateOffset(days=1)).strftime("%Y-%m-%d"),
         "tickers": {}
     }
     download_log: dict[str, str] = {}
