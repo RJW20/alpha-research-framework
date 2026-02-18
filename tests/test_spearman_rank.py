@@ -62,6 +62,14 @@ class TestPearsonScalar(unittest.TestCase):
         expected = np.corrcoef(x, y)[0, 1]
         self.assertAlmostEqual(pearson, expected)
 
+    def test_constant(self) -> None:
+        """Verify scalar pearson is nan for constant x."""
+
+        x = np.ones(shape=self.SIZE)
+        rng = np.random.default_rng(0)
+        y = rng.uniform(0, self.SIZE, self.SIZE)
+        np.testing.assert_equal(pearson_scalar(x, y), np.nan)
+
 
 class TestSpearmanRank(unittest.TestCase):
     
@@ -83,6 +91,16 @@ class TestSpearmanRank(unittest.TestCase):
         df = pd.DataFrame({'x': x, 'y':y})
         expected = df.corr('spearman')['x']['y']
         self.assertAlmostEqual(spearman, expected)
+
+    def test_nan(self) -> None:
+        """Verify spearman rank is nan for full nan mask."""
+
+        rng = np.random.default_rng(0)
+        x = rng.uniform(0, self.SIZE, self.SIZE)
+        y = rng.uniform(0, self.SIZE, self.SIZE)
+        nan_mask = rng.uniform(size=self.SIZE) < 0.5
+        x[nan_mask], y[~nan_mask] = np.nan, np.nan
+        np.testing.assert_equal(spearman_rank(x, y), np.nan)
 
 
 if __name__ == "__main__":

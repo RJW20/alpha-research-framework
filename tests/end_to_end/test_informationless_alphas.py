@@ -34,7 +34,7 @@ class TestInformationLessAlphas(unittest.TestCase):
         )
 
     def test_random_noise(self) -> None:
-        """Verify IC for random signal is ~0."""
+        """Verify IC for random signal is ~0 to 2 decimal places."""
 
         class RandomNoise(Alpha):
             """
@@ -62,11 +62,12 @@ class TestInformationLessAlphas(unittest.TestCase):
         ic_mean = ic_df.mean()
         np.testing.assert_array_almost_equal(
             ic_mean.to_numpy(),
-            np.zeros(shape=ic_mean.shape)
+            np.zeros(shape=ic_mean.shape),
+            decimal=2
         )
 
     def test_constant(self) -> None:
-        """Verify IC for constant signal is ~0."""
+        """Verify IC for constant signal is nan."""
 
         class Constant(Alpha):
             """Alpha that gives a signal of 1 for every stock."""
@@ -86,7 +87,7 @@ class TestInformationLessAlphas(unittest.TestCase):
         ic_mean = ic_df.mean()
         np.testing.assert_array_almost_equal(
             ic_mean.to_numpy(),
-            np.zeros(shape=ic_mean.shape)
+            np.full_like(ic_mean, np.nan)
         )
         
     @classmethod

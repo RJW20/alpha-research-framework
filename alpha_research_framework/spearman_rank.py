@@ -34,7 +34,10 @@ def pearson_scalar(x: np.ndarray, y: np.ndarray) -> float:
     ym = y.mean()
     numerator = np.dot(x - xm, y - ym)
     denominator = np.sqrt(np.dot(x - xm, x - xm) * np.dot(y - ym, y - ym))
-    return numerator / denominator
+    if denominator != 0:
+        return numerator / denominator
+    else:
+        return np.nan
 
 def spearman_rank(x: np.ndarray, y: np.ndarray) -> float:
     """
@@ -44,6 +47,9 @@ def spearman_rank(x: np.ndarray, y: np.ndarray) -> float:
     """
 
     mask = ~np.isnan(x) & ~np.isnan(y)
+    if not np.any(mask):
+        return np.nan
+    
     x_clean, y_clean = x[mask], y[mask]
     x_rank, y_rank = rankdata(x_clean), rankdata(y_clean)
     return pearson_scalar(x_rank, y_rank)
