@@ -1,7 +1,7 @@
 import pandas as pd
 
 from alpha_research_framework.alphas import Alpha
-from alpha_research_framework.spearman_rank import spearman_rank
+from alpha_research_framework.evaluate.spearman_rank import spearman_rank
 from alpha_research_framework.universe import Universe
 from alpha_research_framework.window import Window
 

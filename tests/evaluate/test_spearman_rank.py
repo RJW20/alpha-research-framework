@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from alpha_research_framework.spearman_rank import (
+from alpha_research_framework.evaluate.spearman_rank import (
     pearson_scalar,
     rankdata,
     spearman_rank,
@@ -101,6 +101,13 @@ class TestSpearmanRank(unittest.TestCase):
         nan_mask = rng.uniform(size=self.SIZE) < 0.5
         x[nan_mask], y[~nan_mask] = np.nan, np.nan
         np.testing.assert_equal(spearman_rank(x, y), np.nan)
+
+    def test_sign_flip(self) -> None:
+        """Verify reversing ranking flips spearman rank."""
+
+        x = np.array([1,2,3,4,5])
+        y = np.array([5,4,3,2,1])
+        self.assertEqual(spearman_rank(x,y), spearman_rank(-x,y) * -1)
 
 
 if __name__ == "__main__":
