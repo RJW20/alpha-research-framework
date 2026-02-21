@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import EquityData, Universe, Window
 from alpha_research_framework.download import Metadata
 from alpha_research_framework.features import (
@@ -11,10 +12,6 @@ from alpha_research_framework.features import (
     Features,
     FeatureSpec,
     FutureReturns,
-)
-from alpha_research_framework.market_data_view import (
-    MarketArray,
-    MarketDataView,
 )
 from tests.dummy_feature import DummyFeature
 from tests.utils import create_download_dir
@@ -96,11 +93,11 @@ class TestUniverse(unittest.TestCase):
         self.assertEqual(universe.shape, self.shape)
 
         self.assertTrue((self.path / "price.dat").exists())
-        price = self._open_memmap("price", np.float32)
+        price = self._open_memmap("price", md.Scalar)
         self.assertEqual(price.shape, self.shape)
 
         self.assertTrue((self.path / "volume.dat").exists())
-        volume = self._open_memmap("volume", np.float32)
+        volume = self._open_memmap("volume", md.Scalar)
         self.assertEqual(volume.shape, self.shape)
 
         self.assertTrue((self.path / "mask.dat").exists())
@@ -119,9 +116,9 @@ class TestUniverse(unittest.TestCase):
         class FeatureA(DummyFeature):
             def compute(
                 self,
-                market_data: MarketDataView,
+                market_data: md.MarketData,
                 features: Features,
-                out: MarketArray
+                out: md.Array
             ) -> None:
                 out[:] = np.ones(out.shape)
 
@@ -130,21 +127,21 @@ class TestUniverse(unittest.TestCase):
             __dependencies__ = {__a_dependency__}
             def compute(
                 self,
-                market_data: MarketDataView,
+                market_data: md.MarketData,
                 features: Features,
-                out: MarketArray
+                out: md.Array
             ) -> None:
                 out[:] = features[self.__a_dependency__][:] * 2
 
         universe.build_features([FeatureSpec(FeatureB)])
 
         self.assertTrue((self.path / f"{FeatureA.__name__}.dat").exists())
-        feature_a = self._open_memmap(f"{FeatureA.__name__}", np.float32)
+        feature_a = self._open_memmap(f"{FeatureA.__name__}", md.Scalar)
         self.assertEqual(feature_a.shape, self.shape)
         np.testing.assert_array_equal(feature_a, np.ones(self.shape))
 
         self.assertTrue((self.path / f"{FeatureB.__name__}.dat").exists())
-        feature_2 = self._open_memmap(f"{FeatureB.__name__}", np.float32)
+        feature_2 = self._open_memmap(f"{FeatureB.__name__}", md.Scalar)
         self.assertEqual(feature_2.shape, self.shape)
         np.testing.assert_array_equal(feature_2, np.ones(self.shape) * 2)
 
@@ -157,9 +154,9 @@ class TestUniverse(unittest.TestCase):
         class RandomNoise(DummyFeature):
             def compute(
                 self,
-                market_data: MarketDataView,
+                market_data: md.MarketData,
                 features: Features,
-                out: MarketArray
+                out: md.Array
             ) -> None:
                 out[:] = rng.uniform(0, 10, size=out.shape)
 
@@ -192,11 +189,11 @@ class TestUniverse(unittest.TestCase):
 
         universe._features[FeatureSpec(Predictor)] = np.ones(
             self.shape,
-            dtype=np.float32
+            dtype=md.Scalar
         )
         universe._features[FeatureSpec(Target)] = np.ones(
             self.shape,
-            dtype=np.float32
+            dtype=md.Scalar
         )
 
         x = universe.cross_section(universe.dates[0])
@@ -227,7 +224,7 @@ class TestUniverse(unittest.TestCase):
         for horizon in Window:
             universe._features[FeatureSpec(FutureReturns, horizon)] = np.ones(
                 self.shape,
-                dtype=np.float32
+                dtype=md.Scalar
             )
         
         fut_ret = universe.future_returns(universe.dates[0])
@@ -240,7 +237,7 @@ class TestUniverse(unittest.TestCase):
 
         universe._features[FeatureSpec(FutureReturns, Window.DAY)] = np.ones(
                 self.shape,
-                dtype=np.float32
+                dtype=md.Scalar
             )
 
         for removed_stocks in range(0, self.shape[1]):

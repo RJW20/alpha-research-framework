@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import Universe, Window
 
 
@@ -20,12 +21,12 @@ class TestComputeMarketData(unittest.TestCase):
 
         np.testing.assert_array_equal(
             price,
-            np.array([10.0, 11.0, 12.0], dtype=np.float32),
+            np.array([10.0, 11.0, 12.0], dtype=md.Scalar),
         )
 
         np.testing.assert_array_equal(
             volume,
-            np.array([100.0, 100.0, 100.0], dtype=np.float32),
+            np.array([100.0, 100.0, 100.0], dtype=md.Scalar),
         )
 
 

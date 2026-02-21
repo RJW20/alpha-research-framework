@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.features import FeatureSpec, Returns, Volatility
 
@@ -22,11 +23,11 @@ class TestVolatility(unittest.TestCase):
             T = lookback.value * 10
             volatility = Volatility(lookback)
             rng = np.random.default_rng(0)
-            returns = rng.uniform(0, T, (T, N)).astype(np.float32)
+            returns = rng.uniform(0, T, (T, N)).astype(md.Scalar)
             nan_mask = rng.uniform(size=returns.shape) < 0.1
             returns[nan_mask] = np.nan
             features = {FeatureSpec(Returns, Window.DAY): returns}
-            out = np.empty_like(returns, dtype=np.float32)
+            out = np.empty_like(returns, dtype=md.Scalar)
 
             volatility.compute({}, features, out)
             
@@ -34,7 +35,7 @@ class TestVolatility(unittest.TestCase):
             expected = df.rolling(lookback.value, min_periods=1).std()
             np.testing.assert_array_almost_equal(
                 out,
-                expected.to_numpy(dtype=np.float32),
+                expected.to_numpy(dtype=md.Scalar),
                 decimal=3
             )
 

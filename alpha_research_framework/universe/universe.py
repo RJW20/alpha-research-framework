@@ -4,9 +4,9 @@ from graphlib import TopologicalSorter
 from pathlib import Path
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework.equity_data import EquityData
 from alpha_research_framework.features import (
     Feature,
@@ -88,7 +88,7 @@ class Universe:
         for feature in ordered_features:
             values = np.memmap(
                 self.path / f"{feature.name}.dat",
-                dtype=np.float32,
+                dtype=md.Scalar,
                 mode="w+",
                 shape=self.shape
             )
@@ -117,10 +117,7 @@ class Universe:
             }
         )
     
-    def future_returns(
-        self,
-        date: pd.Timestamp
-    ) -> dict[Window, npt.NDArray[np.float32]]:
+    def future_returns(self, date: pd.Timestamp) -> dict[Window, md.Array]:
         """
         Return a dictionary mapping horizon to future returns over that horizon
         for all stocks in-universe at the given date.
@@ -157,8 +154,8 @@ class Universe:
     
     @staticmethod
     def _compute_market_data(df: pd.DataFrame) -> tuple[np.ndarray,...]:
-        price = df["adj_close"].to_numpy(dtype=np.float32)
-        volume = (df["volume"] / df["adj_factor"]).to_numpy(dtype=np.float32)
+        price = df["adj_close"].to_numpy(dtype=md.Scalar)
+        volume = (df["volume"] / df["adj_factor"]).to_numpy(dtype=md.Scalar)
         return price, volume
 
     @staticmethod

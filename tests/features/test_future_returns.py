@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.features import (
     FeatureSpec,
@@ -22,9 +23,9 @@ class TestFutureReturns(unittest.TestCase):
             
             T = horizon.value * 10
             future_returns = FutureReturns(horizon)
-            log_prices = np.arange(T, dtype=np.float32)
+            log_prices = np.arange(T, dtype=md.Scalar)
             features = {FeatureSpec(LogPrice): log_prices}
-            out = np.empty_like(log_prices, dtype=np.float32)
+            out = np.empty_like(log_prices, dtype=md.Scalar)
 
             future_returns.compute({}, features, out)
             
@@ -34,7 +35,7 @@ class TestFutureReturns(unittest.TestCase):
                     * (T - horizon.value - FutureReturns._ENTRY_LAG)
                     + [np.nan] * (horizon.value + FutureReturns._ENTRY_LAG)
                 ),
-                dtype=np.float32,
+                dtype=md.Scalar,
             )
             np.testing.assert_array_equal(out, expected)
 

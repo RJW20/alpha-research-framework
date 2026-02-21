@@ -1,7 +1,5 @@
-import numpy as np
-import numpy.typing as npt
-
 import alpha_research_framework.features as features
+import alpha_research_framework.market_data as md
 from alpha_research_framework.alphas.alpha import Alpha
 from alpha_research_framework.alphas.alpha_error import AlphaError
 from alpha_research_framework.features import FeatureSpec
@@ -42,7 +40,7 @@ class Volatility(Alpha):
         if not isinstance(cls.LOOKBACK, Window):
             raise TypeError(f"{cls.__name__}.LOOKBACK must be of type Window.")
 
-    def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+    def compute(self, x: CrossSection) -> md.Array:
         """a_t = -s_t"""
 
         return x[self._volatility.name] * -1

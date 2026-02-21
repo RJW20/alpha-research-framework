@@ -1,7 +1,5 @@
-import numpy as np
-import numpy.typing as npt
-
 import alpha_research_framework.features as features
+import alpha_research_framework.market_data as md
 from alpha_research_framework.alphas.alpha import Alpha
 from alpha_research_framework.alphas.alpha_error import AlphaError
 from alpha_research_framework.features import FeatureSpec
@@ -17,7 +15,7 @@ class ReturnsBased(Alpha):
     Any concrete subclass must define:
     - NAME: str - unique identifier
     - CATEGORY: str - logical grouping label
-    - LOOKBACK: Window - period into the past to start tracking returns
+    - LOOKBACK: Window - period into the past to track returns from
     - (optional) SKIP: Window - period into the past to stop tracking returns (
     must be less than LOOKBACK)
     - HORIZONS: set[Window] - prediction horizons for which the alpha will be
@@ -54,7 +52,7 @@ class ReturnsBased(Alpha):
                     f"{cls.__name__}.LOOKBACK."
                 )
 
-    def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+    def compute(self, x: CrossSection) -> md.Array:
         """a_t = r_{t-lookback} - r_{t-skip}"""
 
         if self._returns_skip is not None:

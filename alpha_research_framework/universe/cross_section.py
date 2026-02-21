@@ -1,5 +1,5 @@
 from typing import TypeAlias
 
-from alpha_research_framework.market_data_view import MarketArray
+import alpha_research_framework.market_data as md
 
-CrossSection: TypeAlias = dict[str, MarketArray]
+CrossSection: TypeAlias = dict[str, md.Array]

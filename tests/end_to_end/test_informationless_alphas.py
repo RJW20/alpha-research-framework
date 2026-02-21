@@ -3,8 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import numpy.typing as npt
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import (
     Alpha,
     EquityData,
@@ -47,13 +47,13 @@ class TestInformationLessAlphas(unittest.TestCase):
             CATEGORY = "testing"
             HORIZONS = set(Window)
 
-            def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+            def compute(self, x: CrossSection) -> md.Array:
                 """a_t ~ N[0,1]"""
                 return self.__rng__.normal(
                     0,
                     1,
                     size=x["price"].shape
-                ).astype(np.float32)
+                ).astype(md.Scalar)
             
             def _init_dependencies(self) -> set[FeatureSpec]:
                 return set()
@@ -76,9 +76,9 @@ class TestInformationLessAlphas(unittest.TestCase):
             CATEGORY = "testing"
             HORIZONS = set(Window)
 
-            def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+            def compute(self, x: CrossSection) -> md.Array:
                 """a_t = 1"""
-                return np.ones_like(x["price"], dtype=np.float32)
+                return np.ones_like(x["price"], dtype=md.Scalar)
 
             def _init_dependencies(self) -> set[FeatureSpec]:
                 return set()

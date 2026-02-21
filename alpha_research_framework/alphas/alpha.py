@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 
-import numpy as np
-import numpy.typing as npt
-
+import alpha_research_framework.market_data as md
 from alpha_research_framework.alphas.alpha_error import AlphaError
 from alpha_research_framework.dependent import Dependent
 from alpha_research_framework.features import FeatureSpec, FutureReturns
@@ -22,8 +20,8 @@ class Alpha(Dependent[FeatureSpec], ABC):
     evaluated
     - _init_dependencies(self) -> set[FeatureSpec] - features the alpha will
     need to generate a signal
-    - compute(self, x: CrossSection) -> npt.NDArray[np.float32] - signal per
-    stock in cross-section
+    - compute(self, x: CrossSection) -> md.Array - signal per stock in
+    cross-section
     Concrete compute() methods are automatically wrapped to enforce runtime
     feature dependency checks.
     """
@@ -88,9 +86,9 @@ class Alpha(Dependent[FeatureSpec], ABC):
         )
 
     @abstractmethod
-    def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+    def compute(self, x: CrossSection) -> md.Array:
         """
-        Return a MarketArray containing raw cross-sectional alpha signal per
+        Return an md.Array containing raw cross-sectional alpha signal per
         stock.
         """
         ...
@@ -103,7 +101,7 @@ class Alpha(Dependent[FeatureSpec], ABC):
         if original is None or getattr(original, "__isabstractmethod__", False):
             return
 
-        def wrapper(self: Alpha, x: CrossSection) -> npt.NDArray[np.float32]:
+        def wrapper(self: Alpha, x: CrossSection) -> md.Array:
             dependencies = {feature.name for feature in self._dependencies}
             missing = dependencies - x.keys()
             if missing:

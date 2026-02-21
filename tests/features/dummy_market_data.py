@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from alpha_research_framework.market_data_view import MarketArray
+import alpha_research_framework.market_data as md
 
 
 @dataclass
 class DummyMarketData:
-    price: MarketArray
-    volume: MarketArray
+    price: md.Array
+    volume: md.Array

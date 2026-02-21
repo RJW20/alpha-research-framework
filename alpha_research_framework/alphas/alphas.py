@@ -1,6 +1,4 @@
-import numpy as np
-import numpy.typing as npt
-
+import alpha_research_framework.market_data as md
 from alpha_research_framework.alphas.returns_based import ReturnsBased
 from alpha_research_framework.alphas.volatility import Volatility
 from alpha_research_framework.universe import CrossSection
@@ -19,7 +17,7 @@ class Reversal1d(ReturnsBased):
     LOOKBACK = Window.DAY
     HORIZONS = {Window.DAY, Window.WEEK}
 
-    def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+    def compute(self, x: CrossSection) -> md.Array:
         return super().compute(x) * -1
     
 
@@ -35,7 +33,7 @@ class Reversal5d(ReturnsBased):
     LOOKBACK = Window.WEEK
     HORIZONS = {Window.DAY, Window.WEEK}
 
-    def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+    def compute(self, x: CrossSection) -> md.Array:
         return super().compute(x) * -1
 
 

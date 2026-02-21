@@ -1,10 +1,7 @@
 from functools import cached_property
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework.features import Feature, Features, FeatureSpec
-from alpha_research_framework.market_data_view import (
-    MarketArray,
-    MarketDataView,
-)
 
 
 class DummyFeature(Feature):
@@ -23,8 +20,8 @@ class DummyFeature(Feature):
     
     def compute(
         self,
-        market_data: MarketDataView,
+        market_data: md.MarketData,
         features: Features,
-        out: MarketArray
+        out: md.Array
     ) -> None:
         pass

@@ -2,14 +2,11 @@ from functools import cached_property
 
 import numpy as np
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework.features.feature import Feature
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.features import Features
 from alpha_research_framework.features.log_price import LogPrice
-from alpha_research_framework.market_data_view import (
-    MarketArray,
-    MarketDataView,
-)
 from alpha_research_framework.window import Window
 
 
@@ -31,9 +28,9 @@ class Returns(Feature):
 
     def compute(
         self,
-        market_data: MarketDataView,
+        market_data: md.MarketData,
         features: Features,
-        out: MarketArray
+        out: md.Array
     ) -> None:
         """r_t = log(p_t) - log(p_{t-lookback})"""
 

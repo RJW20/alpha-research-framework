@@ -2,6 +2,8 @@ from pathlib import Path
 
 import numpy as np
 
+import alpha_research_framework.market_data as md
+
 
 class MarketDataStore:
     """
@@ -14,13 +16,13 @@ class MarketDataStore:
     def __init__(self, path: Path, shape: tuple[int, int]) -> None:
         self.price = np.memmap(
             path / "price.dat",
-            dtype=np.float32,
+            dtype=md.Scalar,
             mode="w+",
             shape=shape,
         )
         self.volume = np.memmap(
             path / "volume.dat",
-            dtype=np.float32,
+            dtype=md.Scalar,
             mode="w+",
             shape=shape,
         )

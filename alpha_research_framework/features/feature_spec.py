@@ -2,10 +2,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, Callable, Type
 
-from alpha_research_framework.market_data_view import (
-    MarketArray,
-    MarketDataView,
-)
+import alpha_research_framework.market_data as md
 from alpha_research_framework.window import Window
 
 if TYPE_CHECKING:
@@ -44,7 +41,7 @@ class FeatureSpec:
     @property
     def compute(
         self
-    ) -> Callable[[MarketDataView, "Features", MarketArray], None]:
+    ) -> Callable[[md.MarketData, "Features", md.Array], None]:
         return self._underlying.compute
         
     @cached_property

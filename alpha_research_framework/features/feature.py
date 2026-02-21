@@ -6,14 +6,11 @@ from typing import ParamSpec
 import numpy as np
 from numba import njit
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework.dependent import Dependent
 from alpha_research_framework.features.feature_error import FeatureError
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.features import Features
-from alpha_research_framework.market_data_view import (
-    MarketArray,
-    MarketDataView,
-)
 
 
 class Feature(Dependent[FeatureSpec], ABC):
@@ -66,9 +63,9 @@ class Feature(Dependent[FeatureSpec], ABC):
     @abstractmethod
     def compute(
         self,
-        market_data: MarketDataView,
+        market_data: md.MarketData,
         features: Features,
-        out: MarketArray
+        out: md.Array
     ) -> None:
         """
         Populate out with values calculated from raw market data and/or
@@ -107,9 +104,9 @@ class Feature(Dependent[FeatureSpec], ABC):
 
         def wrapper(
             self: Feature,
-            market_data: MarketDataView,
+            market_data: md.MarketData,
             features: Features,
-            out: MarketArray
+            out: md.Array
         ) -> None:
             missing = self._dependencies - features.keys()
             if missing:
@@ -123,11 +120,7 @@ class Feature(Dependent[FeatureSpec], ABC):
 
     @staticmethod
     @njit
-    def _rolling_std(
-        values: MarketArray,
-        lookback: int,
-        out: MarketArray
-    ) -> None:
+    def _rolling_std(values: md.Array,  lookback: int, out: md.Array) -> None:
         """
         Populate out with the rolling standard deviation of values over the
         given lookback period.

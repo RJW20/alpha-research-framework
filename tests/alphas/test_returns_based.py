@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.alphas.alpha_error import AlphaError
 from alpha_research_framework.alphas.returns_based import ReturnsBased
@@ -9,7 +10,7 @@ from alpha_research_framework.features import Returns
 from alpha_research_framework.universe import CrossSection
 
 
-class TestReturnsBasedSubclassValidation(unittest.TestCase):
+class TestReturnsBasedSubClassValidation(unittest.TestCase):
 
     def test_abstract(self) -> None:
         """Verify subclass is not validated when __abstract__ is set."""
@@ -88,8 +89,7 @@ class TestReturnsBasedCompute(unittest.TestCase):
 
             x = CrossSection()
             returns_lookback = Returns(lookback)
-            x[returns_lookback.name] = \
-                rng.uniform(0, 10, 100).astype(np.float32)
+            x[returns_lookback.name] = rng.uniform(0, 10, 100).astype(md.Scalar)
             
             class DummyNoSkip(ReturnsBased):
                 NAME = "dummy"
@@ -106,8 +106,7 @@ class TestReturnsBasedCompute(unittest.TestCase):
             for skip in [w for w in Window if w < lookback]:
 
                 returns_skip = Returns(skip)
-                x[returns_skip.name] = \
-                    rng.uniform(0, 10, 100).astype(np.float32)
+                x[returns_skip.name] = rng.uniform(0, 10, 100).astype(md.Scalar)
 
                 class Dummy(ReturnsBased):
                     NAME = "dummy"

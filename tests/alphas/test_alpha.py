@@ -1,8 +1,8 @@
 import unittest
 
 import numpy as np
-import numpy.typing as npt
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.alphas import Alpha
 from alpha_research_framework.alphas.alpha_error import AlphaError
@@ -90,7 +90,7 @@ class TestAlphaDependencies(unittest.TestCase):
         class Dummy(Alpha):
             __abstract__ = True
             HORIZONS = set(Window)
-            def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+            def compute(self, x: CrossSection) -> md.Array:
                 pass
             def _init_dependencies(self) -> set[FeatureSpec]:
                 return {FeatureSpec(DummyFeature)}
@@ -105,7 +105,7 @@ class TestAlphaDependencies(unittest.TestCase):
             NAME = "dummy"
             CATEGORY = "dummy"
             HORIZONS = set()
-            def compute(self, x: CrossSection) -> npt.NDArray[np.float32]:
+            def compute(self, x: CrossSection) -> md.Array:
                 pass
             def _init_dependencies(self) -> set[FeatureSpec]:
                 return {FeatureSpec(DummyFeature)}

@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.features import FeatureSpec, LogPrice, Returns
 
@@ -18,9 +19,9 @@ class TestReturns(unittest.TestCase):
             
             T = lookback.value * 10
             returns = Returns(lookback)
-            log_prices = np.arange(T, dtype=np.float32)
+            log_prices = np.arange(T, dtype=md.Scalar)
             features = {FeatureSpec(LogPrice): log_prices}
-            out = np.empty_like(log_prices, dtype=np.float32)
+            out = np.empty_like(log_prices, dtype=md.Scalar)
 
             returns.compute({}, features, out)
             
@@ -28,7 +29,7 @@ class TestReturns(unittest.TestCase):
                 (
                     [np.nan] * lookback.value +
                     [lookback.value] * (T - lookback.value)
-                ), dtype=np.float32
+                ), dtype=md.Scalar
                 )
             np.testing.assert_array_equal(out, expected)
 

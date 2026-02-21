@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework.features import Feature, Features, FeatureSpec
 from alpha_research_framework.features.feature_error import FeatureError
 from tests.dummy_feature import DummyFeature
@@ -80,17 +81,17 @@ class TestFeatureCalculations(unittest.TestCase):
         """
 
         rng = np.random.default_rng(0)
-        x = rng.uniform(0, 10, (10000, 10)).astype(np.float32)
+        x = rng.uniform(0, 10, (10000, 10)).astype(md.Scalar)
         nan_mask = rng.uniform(size=x.shape) < 0.1
         x[nan_mask] = np.nan
         for lookback in [1, 10, 100, 1000]:
-            out = np.empty_like(x, dtype=np.float32)
+            out = np.empty_like(x, dtype=md.Scalar)
             Feature._rolling_std(x, lookback, out)
             df = pd.DataFrame(x)
             expected = df.rolling(lookback, min_periods=1).std()
             np.testing.assert_array_almost_equal(
                 out,
-                expected.to_numpy(dtype=np.float32),
+                expected.to_numpy(dtype=md.Scalar),
                 decimal=5
             )
 

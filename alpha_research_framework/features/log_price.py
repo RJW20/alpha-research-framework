@@ -2,13 +2,10 @@ from functools import cached_property
 
 import numpy as np
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework.features.feature import Feature
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.features import Features
-from alpha_research_framework.market_data_view import (
-    MarketArray,
-    MarketDataView,
-)
 
 
 class LogPrice(Feature):
@@ -24,8 +21,8 @@ class LogPrice(Feature):
 
     def compute(
         self,
-        market_data: MarketDataView,
+        market_data: md.MarketData,
         features: Features,
-        out: MarketArray
+        out: md.Array
     ) -> None:
         out[:] = np.log(market_data.price)

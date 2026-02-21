@@ -1,13 +1,10 @@
 from functools import cached_property
 
+import alpha_research_framework.market_data as md
 from alpha_research_framework.features.feature import Feature
 from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.features import Features
 from alpha_research_framework.features.returns import Returns
-from alpha_research_framework.market_data_view import (
-    MarketArray,
-    MarketDataView,
-)
 from alpha_research_framework.window import Window
 
 
@@ -29,9 +26,9 @@ class Volatility(Feature):
 
     def compute(
         self,
-        market_data: MarketDataView,
+        market_data: md.MarketData,
         features: Features,
-        out: MarketArray
+        out: md.Array
     ) -> None:
         """s_t = sqrt(sum(r_{t-lookback+1}, ..., r_{t}) / (lookback - 1))"""
 
