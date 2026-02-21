@@ -13,8 +13,6 @@ from alpha_research_framework.window import Window
 class FutureReturns(Feature):
 
     TAG = Feature.Tag.TARGET
-    
-    _ENTRY_LAG: int = 1
 
     def __init__(self, horizon: Window) -> None:
         super().__init__()
@@ -34,10 +32,9 @@ class FutureReturns(Feature):
         features: Features,
         out: md.Array
     ) -> None:
-        """r_t = log(p_{t+entry_lag+horizon} / p_{t+entry_lag})"""
+        """r_t = log(p_{t+horizon}) - log(p_t)"""
 
-        start = self._ENTRY_LAG
-        end = self._ENTRY_LAG + self._horizon.value
+        horizon = self._horizon.value
         log_price = features[self._log_price]
-        out[:-end] = log_price[end:] - log_price[start:-end + start]
-        out[-end:] = np.nan
+        out[:-horizon] = log_price[horizon:] - log_price[:-horizon]
+        out[-horizon:] = np.nan

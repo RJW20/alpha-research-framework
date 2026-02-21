@@ -14,8 +14,8 @@ def evaluate(
 
     Returns a dictionary mapping metrics to pd.DataFrames indexed by date, with
     one column per (alpha, horizon) pair, containing a measure of the
-    correlation between alpha scores at time t and returns between times t + 1
-    and t + horizon:
+    correlation between alpha scores at time t and returns between times t and
+    t + horizon:
     - `ic` - Information Coefficient: Spearman's rank correlation coefficient
     between signal and future returns.
 

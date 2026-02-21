@@ -31,9 +31,8 @@ class TestFutureReturns(unittest.TestCase):
             
             expected = np.array(
                 (
-                    [horizon.value]
-                    * (T - horizon.value - FutureReturns._ENTRY_LAG)
-                    + [np.nan] * (horizon.value + FutureReturns._ENTRY_LAG)
+                    [horizon.value] * (T - horizon.value) +
+                    [np.nan] * (horizon.value)
                 ),
                 dtype=md.Scalar,
             )
