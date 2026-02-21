@@ -1,19 +1,24 @@
 import pandas as pd
 
 from alpha_research_framework.alphas import Alpha
-from alpha_research_framework.evaluate.spearman_rank import spearman_rank
+from alpha_research_framework.evaluate.metrics import Metric, compute_metric
 from alpha_research_framework.universe import Universe
 from alpha_research_framework.window import Window
 
 
-def evaluate(universe: Universe, alphas: list[Alpha]) -> pd.DataFrame:
+def evaluate(
+    universe: Universe, alphas: list[Alpha], metrics: set[Metric] = {"ic"}
+) -> dict[Metric, pd.DataFrame]:
     """
-    Evaluate cross-sectional predictive power of one or more alphas using
-    Information Coefficient (IC) analysis.
+    Evaluate cross-sectional predictive power of one or more alphas.
 
-    Returns a pd.DataFrame indexed by date, with one column per (alpha, horizon)
-    pair, containing the cross-sectional correlation between alpha scores at
-    time t and forward returns between times t + 1 and t + horizon.
+    Returns a dictionary mapping metrics to pd.DataFrames indexed by date, with
+    one column per (alpha, horizon) pair, containing a measure of the
+    correlation between alpha scores at time t and returns between times t + 1
+    and t + horizon:
+    - `ic` - Information Coefficient: Spearman's rank correlation coefficient
+    between signal and future returns.
+
     Missing values will appear where:
     - frequency does not align with horizon
     - alpha signals cannot be computed (start of sample)
@@ -22,8 +27,14 @@ def evaluate(universe: Universe, alphas: list[Alpha]) -> pd.DataFrame:
     """
 
     tuples = [(a.NAME, h) for a in alphas for h in sorted(a.HORIZONS)]
-    columns = pd.MultiIndex.from_tuples(tuples, names=["alpha", "horizons"])
-    ic_df = pd.DataFrame(index=universe.dates, columns=columns, dtype=float)
+    columns = pd.MultiIndex.from_tuples(tuples, names=["alpha", "horizon"])
+    result: dict[Metric, pd.DataFrame] = dict()
+    for metric in metrics:
+        result[metric] = pd.DataFrame(
+            index=universe.dates,
+            columns=columns,
+            dtype=float
+        )
 
     features = set().union(*[alpha.required_features for alpha in alphas])
     universe.build_features(features)
@@ -42,8 +53,9 @@ def evaluate(universe: Universe, alphas: list[Alpha]) -> pd.DataFrame:
                 continue
             signal = alpha.compute(x)
             for horizon in horizons_to_evaluate:
-                ic_df.loc[date, (alpha.NAME, horizon)] = spearman_rank(
-                    signal, fut_ret[horizon]
-                )
+                for metric in metrics:
+                    result[metric].loc[date, (alpha.NAME, horizon)] = (
+                        compute_metric(metric, signal, fut_ret[horizon])
+                    )
 
-    return ic_df
+    return result

@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from alpha_research_framework.evaluate.spearman_rank import (
+from alpha_research_framework.evaluate.metrics.information_coefficient.spearman_rank import (  # noqa: E501
     pearson_scalar,
     rankdata,
     spearman_rank,
