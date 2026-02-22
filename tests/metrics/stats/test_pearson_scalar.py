@@ -31,6 +31,5 @@ class TestPearsonScalar(unittest.TestCase):
         np.testing.assert_equal(pearson_scalar(x, y), np.nan)
 
 
-
 if __name__ == "__main__":
     unittest.main()
