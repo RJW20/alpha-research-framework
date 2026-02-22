@@ -2,12 +2,11 @@ import unittest
 
 from alpha_research_framework.metrics import Metric
 from alpha_research_framework.metrics.metric_error import MetricError
+from tests.utils import RegistryIsolatedTestCase
 
 
-class TestMetricSubClassValidation(unittest.TestCase):
-
-    def tearDown(self) -> None:
-        Metric.__registry__.clear()
+class TestMetricSubClassValidation(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Metric
 
     def test_id(self) -> None:
         """
@@ -26,10 +25,10 @@ class TestMetricSubClassValidation(unittest.TestCase):
             class Dummy(Metric):
                 ID = ""
 
-        class Dummy1(Metric):
+        class Dummy(Metric):
             ID = "dummy"
         with self.assertRaises(MetricError):
-            class Dummy2(Metric):
+            class Dummy(Metric):
                 ID = "dummy"
 
     def test_from_id(self) -> None:
