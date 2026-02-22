@@ -1,7 +1,9 @@
 import numpy as np
 import numpy.typing as npt
+from numba import njit
 
 
+@njit
 def quantile_indices(
     x: np.ndarray,
     num_quantiles: int
@@ -15,6 +17,10 @@ def quantile_indices(
     N = len(x)
     order = np.argsort(x)
     q_idx = np.empty_like(order)
-    q_idx[order] = np.floor(np.arange(N) * num_quantiles / N).astype(int)
+    for rank in range(N):
+        q = (rank * num_quantiles) // N
+        if q >= num_quantiles:
+            q = num_quantiles - 1
+        q_idx[order[rank]] = q
 
     return q_idx

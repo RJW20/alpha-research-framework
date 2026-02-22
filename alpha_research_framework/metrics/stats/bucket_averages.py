@@ -1,7 +1,9 @@
 import numpy as np
 import numpy.typing as npt
+from numba import njit
 
 
+@njit
 def bucket_averages(
     bucket_idx: npt.NDArray[np.integer],
     x: np.ndarray,
@@ -13,12 +15,19 @@ def bucket_averages(
     Emtpy buckets will result in np.nan.
     """
 
-    bucket_totals = np.bincount(bucket_idx, weights=x, minlength=num_buckets)
-    bucket_counts = np.bincount(bucket_idx, minlength=num_buckets)
+    bucket_totals = np.zeros(num_buckets)
+    bucket_counts = np.zeros(num_buckets)
 
-    bucket_averages = np.full(num_buckets, np.nan)
-    nonzero = bucket_counts > 0
-    bucket_averages[nonzero] = (
-        bucket_totals[nonzero] / bucket_counts[nonzero]
-    )
+    for i in range(len(bucket_idx)):
+        b = bucket_idx[i]
+        bucket_totals[b] += x[i]
+        bucket_counts[b] += 1
+
+    bucket_averages = np.empty(num_buckets)
+    for b in range(num_buckets):
+        if bucket_counts[b] > 0:
+            bucket_averages[b] = bucket_totals[b] / bucket_counts[b]
+        else:
+            bucket_averages[b] = np.nan
+
     return bucket_averages
