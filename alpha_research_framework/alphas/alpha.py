@@ -11,7 +11,7 @@ from alpha_research_framework.window import Window
 class Alpha(Dependent[FeatureSpec], ABC):
     """
     Abstract base class for cross-sectional alphas with automatic subclass
-    validation and dependency enforcement.
+    validation, runtime dependency enforcement and registry management.
 
     Any concrete subclass must define:
     - NAME: str - unique identifier
@@ -26,6 +26,8 @@ class Alpha(Dependent[FeatureSpec], ABC):
     feature dependency checks.
     """
 
+    __registry__: dict[str, type["Alpha"]] = dict()
+
     __abstract__ = True
     __dependency_type__ = FeatureSpec
 
@@ -37,7 +39,8 @@ class Alpha(Dependent[FeatureSpec], ABC):
     def __init_subclass__(cls) -> None:
         """
         Validate definition, type and value of NAME and CATEGORY and definition
-        and type of HORIZONS and wrap compute with runtime dependency check.
+        and type of HORIZONS, wrap compute with runtime dependency check and add
+        subclass to registry.
         """
 
         super().__init_subclass__()
@@ -54,6 +57,11 @@ class Alpha(Dependent[FeatureSpec], ABC):
             raise TypeError(f"{cls.__name__}.NAME must be of type str.")
         if not cls.NAME:
             raise ValueError(f"{cls.__name__}.NAME cannot be empty.")
+        if cls.NAME in Alpha.__registry__:
+            raise AlphaError(
+                f"{cls.__name__}.NAME must be unique (alpha with NAME "
+                f"'{cls.NAME}' already exists)."
+            )
         
         if cls.CATEGORY is None:
             raise AlphaError(f"{cls.__name__} must define CATEGORY.")
@@ -73,6 +81,15 @@ class Alpha(Dependent[FeatureSpec], ABC):
             )
 
         cls._wrap_compute()
+
+        Alpha.__registry__[cls.NAME] = cls
+
+    @staticmethod
+    def from_name(name: str) -> type["Alpha"]:
+        """Return the alpha with NAME = name."""
+        if name not in Alpha.__registry__:
+            raise AlphaError(f"Alpha with NAME '{name}' does not exist.")
+        return Alpha.__registry__[name]
     
     @property
     def required_features(self) -> set[FeatureSpec]:

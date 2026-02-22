@@ -10,6 +10,8 @@ class RegistryIsolatedTestCase(unittest.TestCase):
     """
     Class for ensuring a class' __registry__ attribute is not mutated duing
     tests.
+
+    All subclasses defined in one test scope must still have unique names.
     """
 
     REGISTRY_OWNER: type[HasRegistry] | None = None

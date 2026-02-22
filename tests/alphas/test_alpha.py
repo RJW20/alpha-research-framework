@@ -9,9 +9,11 @@ from alpha_research_framework.alphas.alpha_error import AlphaError
 from alpha_research_framework.features import FeatureSpec
 from alpha_research_framework.universe import CrossSection
 from tests.dummy_feature import DummyFeature
+from tests.utils import RegistryIsolatedTestCase
 
 
-class TestAlphaSubClassValidation(unittest.TestCase):
+class TestAlphaSubClassValidation(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
 
     def test_abstract(self) -> None:
         """Verify subclass is not validated when __abstract__ is set."""
@@ -78,8 +80,37 @@ class TestAlphaSubClassValidation(unittest.TestCase):
                 CATEGORY = "dummy"
                 HORIZONS = {"a", 123}
 
+    def test_registry(self) -> None:
+        """Verify subclasses are only added to registry if NAME is unique."""
+        
+        class Dummy1(Alpha):
+            NAME = "test_registry_dummy"
+            CATEGORY = "dummy"
+            HORIZONS = set()
+        with self.assertRaises(AlphaError):
+            class Dummy2(Alpha):
+                NAME = "test_registry_dummy"
+                CATEGORY = "dummy"
+                HORIZONS = set()
 
-class TestAlphaDependencies(unittest.TestCase):
+    def test_from_name(self) -> None:
+        """Verify alpha returned has correct name."""
+
+        class Dummy(Alpha):
+            NAME = "test_from_name_dummy"
+            CATEGORY = "dummy"
+            HORIZONS = set()
+        self.assertEqual(Alpha.from_name(Dummy.NAME).NAME, Dummy.NAME)
+
+    def test_from_invalid_id(self) -> None:
+        """Verify an error is raised when alpha name is fictional."""
+
+        with self.assertRaises(AlphaError):
+            Alpha.from_name("abc")
+
+
+class TestAlphaDependencies(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
 
     def test_required_features(self) -> None:
         """

@@ -4,13 +4,16 @@ import numpy as np
 
 import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
+from alpha_research_framework.alphas import Alpha
 from alpha_research_framework.alphas.alpha_error import AlphaError
 from alpha_research_framework.alphas.returns_based import ReturnsBased
 from alpha_research_framework.features import Returns
 from alpha_research_framework.universe import CrossSection
+from tests.utils import RegistryIsolatedTestCase
 
 
-class TestReturnsBasedSubClassValidation(unittest.TestCase):
+class TestReturnsBasedSubClassValidation(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
 
     def test_abstract(self) -> None:
         """Verify subclass is not validated when __abstract__ is set."""
@@ -24,14 +27,14 @@ class TestReturnsBasedSubClassValidation(unittest.TestCase):
         """
 
         with self.assertRaises(AlphaError):
-            class Dummy(ReturnsBased):
-                NAME = "dummy"
+            class Dummy1(ReturnsBased):
+                NAME = "dummy_1"
                 CATEGORY = "dummy"
                 HORIZONS = set()
 
         with self.assertRaises(TypeError):
-            class Dummy(ReturnsBased):
-                NAME = "dummy"
+            class Dummy2(ReturnsBased):
+                NAME = "dummy_2"
                 CATEGORY = "dummy"
                 HORIZONS = set()
                 LOOKBACK = 1
@@ -40,23 +43,24 @@ class TestReturnsBasedSubClassValidation(unittest.TestCase):
         """Verify type and value of SKIP validated when subclassing."""
 
         with self.assertRaises(TypeError):
-            class Dummy(ReturnsBased):
-                NAME = "dummy"
+            class Dummy1(ReturnsBased):
+                NAME = "dummy_1"
                 CATEGORY = "dummy"
                 HORIZONS = set()
                 LOOKBACK = Window.DAY
                 SKIP = 1
 
         with self.assertRaises(ValueError):
-            class Dummy(ReturnsBased):
-                NAME = "dummy"
+            class Dummy2(ReturnsBased):
+                NAME = "dummy_2"
                 CATEGORY = "dummy"
                 HORIZONS = set()
                 LOOKBACK = Window.DAY
                 SKIP = Window.DAY
 
 
-class TestReturnsBasedDependencies(unittest.TestCase):
+class TestReturnsBasedDependencies(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
 
     def test_init(self) -> None:
         """
@@ -75,7 +79,8 @@ class TestReturnsBasedDependencies(unittest.TestCase):
         self.assertEqual(len(dummy._init_dependencies()), 2)
 
 
-class TestReturnsBasedCompute(unittest.TestCase):
+class TestReturnsBasedCompute(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
 
     def test_compute(self) -> None:
         """
@@ -92,7 +97,7 @@ class TestReturnsBasedCompute(unittest.TestCase):
             x[returns_lookback.name] = rng.uniform(0, 10, 100).astype(md.Scalar)
             
             class DummyNoSkip(ReturnsBased):
-                NAME = "dummy"
+                NAME = f"dummy_no_skip_{lookback.value}"
                 CATEGORY = "dummy"
                 HORIZONS = set()
                 LOOKBACK = lookback
@@ -109,7 +114,7 @@ class TestReturnsBasedCompute(unittest.TestCase):
                 x[returns_skip.name] = rng.uniform(0, 10, 100).astype(md.Scalar)
 
                 class Dummy(ReturnsBased):
-                    NAME = "dummy"
+                    NAME = f"dummy_{lookback.value}_{skip.value}"
                     CATEGORY = "dummy"
                     HORIZONS = set()
                     LOOKBACK = lookback
