@@ -1,4 +1,5 @@
 import unittest
+from typing import ClassVar
 
 from alpha_research_framework.class_var_validator import ClassVarValidator
 
@@ -6,7 +7,7 @@ from alpha_research_framework.class_var_validator import ClassVarValidator
 class TestAssertClassVar(unittest.TestCase):
 
     class NeedsClassVarValidated(ClassVarValidator):
-        attr: str
+        attr: ClassVar[str]
         def __init_subclass__(cls) -> None:
             cls.assert_class_var(name="attr", type=str, bad_values={""})
 
@@ -41,7 +42,7 @@ class TestAssertClassVar(unittest.TestCase):
 class TestAssertClassVarContainer(unittest.TestCase):
 
     class NeedsClassVarContainerValidated(ClassVarValidator):
-        attrs: set[str]
+        attrs: ClassVar[set[str]]
         def __init_subclass__(cls) -> None:
             cls.assert_class_var_container(
                 name="attrs",
