@@ -3,36 +3,56 @@ import unittest
 from alpha_research_framework.operator import Operator
 
 
-class TestOperatorID(unittest.TestCase):
+class TestOperatorId(unittest.TestCase):
 
-    class RegistryRoot(Operator, registry_root=True, abstract=True):
-        pass
+    def test_class_var_assertion(self) -> None:
+        """
+        Verify definition, type and value of `ID` asserted when subclassing.
+        """
+
+        with self.assertRaises(AttributeError):
+            class NoId(Operator):
+                pass
+
+        with self.assertRaises(TypeError):
+            class IncompatibleId(Operator):
+                ID = 1
+
+        with self.assertRaises(ValueError):
+            class BadId(Operator):
+                ID = ""
 
     def test_duplicate(self) -> None:
         """Verify 2 operators with the same root cannot share `ID`."""
 
-        class Operator1(TestOperatorID.RegistryRoot):
+        class Root(Operator, registry_root=True, abstract=True):
+            pass
+
+        class Operator1(Root):
             ID = "op"
 
         with self.assertRaises(ValueError):
-            class Operator2(TestOperatorID.RegistryRoot):
+            class Operator2(Root):
                 ID = "op"
 
     def test_from_id(self) -> None:
         """Verify operator returned by `id` matches."""
 
-        class DummyOperator(TestOperatorID.RegistryRoot):
+        class Root(Operator, registry_root=True, abstract=True):
+            pass
+
+        class DummyOperator(Root):
             ID = "dummy_op"
-        self.assertIs(
-            TestOperatorID.RegistryRoot.from_id("dummy_op"),
-            DummyOperator
-        )
+        self.assertIs(Root.from_id("dummy_op"), DummyOperator)
 
     def test_from_invalid_id(self) -> None:
         """Verify an error is raised when `id` is fictional."""
 
+        class Root(Operator, registry_root=True, abstract=True):
+            pass
+
         with self.assertRaises(ValueError):
-            TestOperatorID.RegistryRoot.from_id("abc")
+            Root.from_id("abc")
 
 
 class TestOperatorRegistryRoot(unittest.TestCase):
@@ -61,7 +81,7 @@ class TestOperatorRegistryRoot(unittest.TestCase):
         non-abstract.
         """
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             class RootlessSubClass(Operator):
                 pass
 

@@ -51,6 +51,8 @@ class Operator(ClassVarValidator, ABC):
         if abstract:
             return
         
+        cls.assert_class_var(name="ID", type=str, bad_values={""})
+        
         root_registries = [
             (base, base.__registry__)
             for base in set(cls.__mro__[1:])
@@ -61,8 +63,6 @@ class Operator(ClassVarValidator, ABC):
                 f"{cls.__name__} is concrete but does not have a registry. "
                 "Ensure a registry root exists in the inheritance chain."
             )
-        
-        cls.assert_class_var(name="ID", type=str, bad_values={""})
         for base, registry in root_registries:
             if cls.ID in registry:
                 raise ValueError(
