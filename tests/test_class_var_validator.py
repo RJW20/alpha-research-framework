@@ -48,7 +48,7 @@ class TestAssertClassVarContainer(unittest.TestCase):
                 name="attrs",
                 container_type=set,
                 element_type=str,
-                bad_values={""}
+                bad_values={""},
             )
 
     def test_definition(self) -> None:

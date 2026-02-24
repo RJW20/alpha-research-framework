@@ -9,7 +9,7 @@ class TestOperatorID(unittest.TestCase):
         pass
 
     def test_duplicate(self) -> None:
-        """Verify 2 operators with the same root cannot share ID."""
+        """Verify 2 operators with the same root cannot share `ID`."""
 
         class Operator1(TestOperatorID.RegistryRoot):
             ID = "op"
@@ -19,7 +19,7 @@ class TestOperatorID(unittest.TestCase):
                 ID = "op"
 
     def test_from_id(self) -> None:
-        """Verify operator returned by id matches."""
+        """Verify operator returned by `id` matches."""
 
         class DummyOperator(TestOperatorID.RegistryRoot):
             ID = "dummy_op"
@@ -29,7 +29,7 @@ class TestOperatorID(unittest.TestCase):
         )
 
     def test_from_invalid_id(self) -> None:
-        """Verify an error is raised when id is fictional."""
+        """Verify an error is raised when `id` is fictional."""
 
         with self.assertRaises(ValueError):
             TestOperatorID.RegistryRoot.from_id("abc")

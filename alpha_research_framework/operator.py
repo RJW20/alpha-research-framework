@@ -33,13 +33,13 @@ class Operator(ClassVarValidator, ABC):
         *,
         registry_root: bool = False,
         abstract: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """
         Initialise a new subclass.
 
         If `registry_root=True` initialises a new `__registry__`.
-        If `abstract=False` enforces definition, type, value and uniqueness of
+        If `abstract=False` asserts definition, type, value and uniqueness of
         `ID` and adds subclass to `__registry__`.
         """
 
@@ -73,7 +73,7 @@ class Operator(ClassVarValidator, ABC):
 
     @classmethod
     def from_id(cls, id: str) -> type[Operator]:
-        """Return the operator with ID = id."""
+        """Return the operator with `ID = id`."""
         if id not in cls.__registry__:
             raise ValueError(
                 f"ID '{id}' not found in registry for {cls.__name__}"

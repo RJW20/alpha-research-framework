@@ -12,11 +12,11 @@ class ClassVarValidator:
         cls,
         name: str,
         type: type,
-        bad_values: set[Any] | None = None
+        bad_values: set[Any] | None = None,
     ) -> None:
         """
         Assert that a class variable exists, has the right type, and is not in
-        bad_values.
+        `bad_values`.
         """
 
         if not hasattr(cls, name):
@@ -40,11 +40,12 @@ class ClassVarValidator:
         name: str,
         container_type: type,
         element_type: type,
-        bad_values: set[Any] | None = None
+        bad_values: set[Any] | None = None,
     ) -> None:
         """
         Assert that a class variable exists, is a container of the right type,
-        all elements have the correct type, and no element is in bad_values.
+        contains only elements of the correct type, and contains no element in
+        `bad_values`.
         """
 
         cls.assert_class_var(name, container_type)
