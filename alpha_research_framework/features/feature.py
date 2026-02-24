@@ -1,129 +1,131 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
+from abc import abstractmethod
 from enum import IntEnum
-from functools import cached_property
-from typing import ParamSpec
+from typing import Any, ClassVar
 
 import numpy as np
 from numba import njit
 
 import alpha_research_framework.market_data as md
-from alpha_research_framework.dependent import Dependent
-from alpha_research_framework.features.feature_error import FeatureError
-from alpha_research_framework.features.feature_spec import FeatureSpec
+from alpha_research_framework.class_var_validator import ClassVarValidator
+from alpha_research_framework.features.dependency_error import DependencyError
 from alpha_research_framework.features.features import Features
+from alpha_research_framework.operator import Operator
 
 
-class Feature(Dependent[FeatureSpec], ABC):
+class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
     """
     Abstract base class for cross-sectional features with automatic subclass
-    validation and runtime dependency type, tag and existence enforcement.
+    validation and runtime missing dependency error reporting.
     
     Any concrete subclass must define:
-    - TAG: Feature.Tag - usage classification
-    - @cached_property name(self) -> str - unique identifier
-    - _init_dependencies(self) -> set[FeatureSpec] - prior features this feature
-    uses to compute itself
-    Concrete compute() methods are automatically wrapped to enforce runtime
-    dependency checks.
+    - `ID`: `str` - unique identifier
+    - `TAG`: `Feature.Tag` (`PREDICTOR` or `TARGET`) - usage classification
+    - `DEPENDENCIES`: `set[Feature]` - prerequisite features this feature needs
+    to compute
+    - `compute(
+        cls,
+        market_data: md.MarketData,
+        features: Features,
+        out: md.Array,
+    ) -> None:` - classmethod for calculating the feature
     """
-
-    __dependency_type__ = FeatureSpec
 
     class Tag(IntEnum):
         PREDICTOR = 0
         TARGET = 1
 
-    TAG: Tag | None = None
+    TAG: ClassVar[Tag]
+    DEPENDENCIES: ClassVar[set[type[Feature]]]
 
-    def __init_subclass__(cls) -> None:
+    def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
         """
-        Validate definition and type of TAG and wrap instance methods with
-        runtime dependency checks.
+        Initialise a new subclass.
+
+        If `abstract=False` asserts definition and type of `TAG`, definition,
+        type and `TAG` of `DEPENDENCIES`, and wraps `compute` with error
+        reporting for incomplete `features` argument.
         """
 
-        super().__init_subclass__()
+        kwargs["abstract"] = abstract
+        super().__init_subclass__(**kwargs)
 
-        if cls is Feature:
+        if abstract:
             return
-        
-        if cls.TAG is None:
-            raise FeatureError(f"{cls.__name__} must define TAG.")
-        if not isinstance(cls.TAG, Feature.Tag):
-            raise TypeError(f"{cls.__name__}.TAG must be of type Feature.Tag.")
 
-        cls._wrap_init()
+        cls.assert_class_var(name="TAG", type=Feature.Tag)
+
+        cls.assert_class_var_container(
+            name="DEPENDENCIES",
+            container_type=set,
+            element_type=type,
+        )
+        cls._assert_dependencies_tags()
+
         cls._wrap_compute()
 
-    @cached_property
-    @abstractmethod
-    def name(self) -> str:
-        """Return a unique str identifier."""
-        ...
-
+    @classmethod
     @abstractmethod
     def compute(
-        self,
+        cls,
         market_data: md.MarketData,
         features: Features,
-        out: md.Array
+        out: md.Array,
     ) -> None:
         """
-        Populate out with values calculated from raw market data and/or
-        already computed features.
+        Populate `out` with values calculated from raw `market_data` and/or
+        already computed `features`.
         """
         ...
 
     @classmethod
-    def _wrap_init(cls) -> None:
+    def _assert_dependencies_tags(cls) -> None:
         """
-        Wrap __init__ with a check to ensure instances cannot depend on features
-        with a higher TAG.
+        Assert that all features in `cls.DEPENDENCIES` do not have a higher
+        `TAG` than `cls`.
         """
 
-        original = cls.__init__
-
-        P = ParamSpec("P")
-        def wrapped(self: Feature, *args: P.args, **kwargs: P.kwargs) -> None:
-            original(self, *args, **kwargs)
-            for feature in self._dependencies:
-                if feature.tag > self.TAG:
-                    raise FeatureError(
-                        f"Feature {self.name} cannot be instantiated: it "
-                        f"cannot depend on {feature.name} with higher TAG."
-                    )
-
-        cls.__init__ = wrapped
+        for feature in cls.DEPENDENCIES:
+            if feature.TAG > cls.TAG:
+                raise ValueError(
+                    f"Feature {cls.__name__} cannot depend on "
+                    f"{feature.__class__.__name__} with higher TAG"
+                )
 
     @classmethod
     def _wrap_compute(cls) -> None:
-        """Wrap compute() to enforce runtime dependency validation."""
+        """
+        Wrap `compute` with error reporting for incomplete `features` argument.
+        """
 
-        original = getattr(cls, "compute", None)
-        if original is None or getattr(original, "__isabstractmethod__", False):
+        original = getattr(cls, "compute")
+        if getattr(original, "__isabstractmethod__", False):
             return
 
         def wrapper(
-            self: Feature,
+            cls: type[Feature],
             market_data: md.MarketData,
             features: Features,
-            out: md.Array
+            out: md.Array,
         ) -> None:
-            missing = self._dependencies - features.keys()
-            if missing:
-                raise FeatureError(
-                    f"Feature {self.name} cannot be computed: missing "
-                    f"dependencies {set(feature.name for feature in missing)}."
+            try:
+                original(market_data, features, out)
+            except KeyError as e:
+                missing_dependency = cls.from_id(e.args[0])
+                raise DependencyError(
+                    f"Feature {cls.__name__} cannot be computed: missing "
+                    f"dependency {missing_dependency.__name__}"
                 )
-            return original(self, market_data, features, out)
 
-        setattr(cls, "compute", wrapper)
+        setattr(cls, "compute", classmethod(wrapper))
 
     @staticmethod
     @njit
     def _rolling_std(values: md.Array,  lookback: int, out: md.Array) -> None:
         """
-        Populate out with the rolling standard deviation of values over the
-        given lookback period.
+        Populate `out` with the rolling standard deviation of `values` over the
+        `lookback` period.
         
         Calculated with Bessel correction, ignoring NaNs.
         Implemented with memory-efficient streaming.

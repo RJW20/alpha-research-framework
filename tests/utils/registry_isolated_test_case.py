@@ -1,20 +1,22 @@
 import unittest
-from typing import Protocol
+from typing import ClassVar
+
+from alpha_research_framework.class_var_validator import ClassVarValidator
+from alpha_research_framework.operator import Operator
 
 
-class HasRegistry(Protocol):
-    __registry__: dict[str, type]
-
-
-class RegistryIsolatedTestCase(unittest.TestCase):
+class RegistryIsolatedTestCase(unittest.TestCase, ClassVarValidator):
     """
-    Class for ensuring a class' __registry__ attribute is not mutated duing
-    tests.
+    Class for ensuring a `registry_root=True` operator's `__registry__`
+    class variable is not permanently mutated during tests.
 
     All subclasses defined in one test scope must still have unique names.
     """
 
-    REGISTRY_OWNER: type[HasRegistry] | None = None
+    REGISTRY_OWNER: ClassVar[type[Operator]]
+
+    def __init_subclass__(cls) -> None:
+        cls.assert_class_var(name="REGISTRY_OWNER", type=type)
 
     def setUp(self):
         super().setUp()

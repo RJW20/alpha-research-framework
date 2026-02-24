@@ -1,83 +1,132 @@
 import unittest
+from typing import override
 
 import numpy as np
 import pandas as pd
 
 import alpha_research_framework.market_data as md
-from alpha_research_framework.features import Feature, Features, FeatureSpec
-from alpha_research_framework.features.feature_error import FeatureError
-from tests.dummy_feature import DummyFeature
+from alpha_research_framework.features.feature import (
+    DependencyError,
+    Feature,
+    Features,
+)
+from tests.utils import RegistryIsolatedTestCase
 
 
-class TestFeatureSubClassValidation(unittest.TestCase):
+class TestFeatureTag(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Feature
 
-    def test_tag(self) -> None:
-        """Verify definition and type of TAG validated when subclassing."""
+    def test_class_var_assertion(self) -> None:
+        """Verify definition and type of `TAG` asserted when subclassing."""
 
-        with self.assertRaises(FeatureError):
-            class Dummy(Feature):
+        with self.assertRaises(AttributeError):
+            class NoTag(Feature):
+                ID = "no_tag"
                 pass
 
         with self.assertRaises(TypeError):
-            class Dummy(Feature):
+            class IncompatibleTag(Feature):
+                ID = "incompatible_tag"
                 TAG = 1
 
 
-class TestFeatureDependencies(unittest.TestCase):
+class TestFeatureDependencies(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Feature
 
-    def test_init_tag(self) -> None:
-        """Verify __init__ method wrapper checks dependency TAGs."""
+    def test_class_var_assertion(self) -> None:
+        """
+        Verify definition and type of `DEPENDENCIES` asserted when subclassing.
+        """
 
-        class Predictor(DummyFeature):
+        with self.assertRaises(AttributeError):
+            class NoDependencies(Feature):
+                ID = "no_dependencies"
+                TAG = Feature.Tag.PREDICTOR
+
+        with self.assertRaises(TypeError):
+            class IncompatibleDependenciesContainer(Feature):
+                ID = "incompatible_dependencies_container"
+                TAG = Feature.Tag.PREDICTOR
+                DEPENDENCIES = list()
+
+        with self.assertRaises(TypeError):
+            class IncompatibleDependenciesElement(Feature):
+                ID = "incompatible_dependencies_element"
+                TAG = Feature.Tag.PREDICTOR
+                DEPENDENCIES = {1}
+
+    def test_assert_tags(self) -> None:
+        """
+        Verify `_assert_dependencies_tags` asserts `Feature.TAG < cls.TAG` for
+        all features in `cls.DEPENDENCIES`.
+        """
+
+        class Predictor(Feature, abstract=True):
             TAG = Feature.Tag.PREDICTOR
 
-        class Target(DummyFeature):
+        class Target(Feature, abstract=True):
             TAG = Feature.Tag.TARGET
 
-        class PredictorOnPredictor(Predictor):
-            __dependencies__ = {FeatureSpec(Predictor)}
+        class PredictorOnPredictor(Feature, abstract=True):
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = {Predictor}
+        PredictorOnPredictor._assert_dependencies_tags()
 
-        class PredictorOnTarget(Predictor):
-            __dependencies__ = {FeatureSpec(Target)}
+        class PredictorOnTarget(Feature, abstract=True):
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = {Target}
+        with self.assertRaises(ValueError):
+            PredictorOnTarget._assert_dependencies_tags()
 
-        class TargetOnPredictor(Target):
-            __dependencies__ = {FeatureSpec(Predictor)}
+        class TargetOnPredictor(Feature, abstract=True):
+            TAG = Feature.Tag.TARGET
+            DEPENDENCIES = {Predictor}
+        TargetOnPredictor._assert_dependencies_tags()
 
-        class TargetOnTarget(Target):
-            __dependencies__ = {FeatureSpec(Target)}
+        class TargetOnTarget(Feature, abstract=True):
+            TAG = Feature.Tag.TARGET
+            DEPENDENCIES = {Target}
+        TargetOnTarget._assert_dependencies_tags()
 
-        feature = PredictorOnPredictor()
-        with self.assertRaises(FeatureError):
-            feature = PredictorOnTarget()
-        feature = TargetOnPredictor()
-        feature = TargetOnTarget()
 
-    def test_compute_existence(self) -> None:
-        """Verify compute method wrapper checks dependency existence."""
+    def test_wrap_compute(self) -> None:
+        """
+        Verify `compute` is wrapped wtih custom error reporting for incomplete
+        `features` argument.
+        """
 
-        class FeatureA(DummyFeature):
-            pass
+        class DependedOn(Feature):
+            ID = "depended_on"
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = set()
+    
+        class HasCompute(Feature, abstract=True):
+            DEPENDENCIES = {DependedOn}
+            @classmethod
+            @override
+            def compute(
+                cls,
+                market_data: md.MarketData,
+                features: Features,
+                out: md.Array,
+            ) -> None:
+                # attempt to use the dependency
+                features[DependedOn.ID]
 
-        class FeatureB(DummyFeature):
-            __dependencies__ = {FeatureSpec(FeatureA)}
+        HasCompute._wrap_compute()
 
-        b = FeatureB()
-        features = Features()
-        with self.assertRaises(FeatureError):
-            b.compute({}, features, np.ndarray(shape=(10,)))
+        with self.assertRaises(DependencyError):
+            HasCompute.compute(None, dict(), None)
 
-        for feature in b.dependencies:
-            features[feature] = np.ndarray(shape=(10,))
-
-        b.compute({}, features, np.ndarray(shape=(10,)))
+        HasCompute.compute(None, {DependedOn.ID: None}, None)
 
 
 class TestFeatureCalculations(unittest.TestCase):
 
     def test_rolling_std(self) -> None:
         """
-        Verify rolling std calculation is same as pandas built in dataframe
-        version.
+        Verify `_rolling_std` calculation is same as `pandas` built in
+        `DataFrame` version.
         """
 
         rng = np.random.default_rng(0)
