@@ -7,13 +7,20 @@ from alpha_research_framework import Window
 from alpha_research_framework.alphas import Alpha
 from alpha_research_framework.features import (
     DailyFutureReturns,
+    DailyReturns,
     DependencyError,
     Feature,
     HalfYearlyFutureReturns,
+    HalfYearlyReturns,
     MonthlyFutureReturns,
+    MonthlyReturns,
     QuarterlyFutureReturns,
+    QuarterlyReturns,
+    Returns,
     WeeklyFutureReturns,
+    WeeklyReturns,
     YearlyFutureReturns,
+    YearlyReturns,
 )
 from alpha_research_framework.features.future_returns import FutureReturns
 from alpha_research_framework.universe import CrossSection
@@ -131,8 +138,30 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
                 DEPENDENCIES = set()
                 HORIZONS = {1}
 
-    def test_horizons_to_future_returns(self) -> None:
-        """Verify correct `FutureReturns` is returned per `Window`."""
+    def test_windows_to_returns(self) -> None:
+        """
+        Verify correct `Returns` or `FutureReturns` is returned per group of
+        `Window`s in the correct order.
+        """
+
+        N = len(Window)
+
+        windows_ret_pairs: list[tuple[Window, type[Returns]]] = [
+            (Window.DAY, DailyReturns),
+            (Window.WEEK, WeeklyReturns),
+            (Window.MONTH, MonthlyReturns),
+            (Window.QUARTER, QuarterlyReturns),
+            (Window.HALF_YEAR, HalfYearlyReturns),
+            (Window.YEAR, YearlyReturns),
+        ]
+        for n in range(1, N + 1):
+            for pairs in combinations(windows_ret_pairs, n):
+                windows = tuple(pair[0] for pair in pairs)
+                returns = tuple(pair[1] for pair in pairs)
+                self.assertTupleEqual(
+                    Alpha._windows_to_returns(*windows),
+                    returns,
+                )
 
         windows_fut_ret_pairs: list[tuple[Window, type[FutureReturns]]] = [
             (Window.DAY, DailyFutureReturns),
@@ -142,14 +171,13 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
             (Window.HALF_YEAR, HalfYearlyFutureReturns),
             (Window.YEAR, YearlyFutureReturns),
         ]
-        N = len(Window)
         for n in range(1, N + 1):
             for pairs in combinations(windows_fut_ret_pairs, n):
-                windows = {pair[0] for pair in pairs}
-                future_returns = {pair[1] for pair in pairs}
-                self.assertSetEqual(
-                    Alpha._horizons_to_future_returns(set(windows)),
-                    set(future_returns),
+                windows = tuple(pair[0] for pair in pairs)
+                future_returns = tuple(pair[1] for pair in pairs)
+                self.assertTupleEqual(
+                    Alpha._windows_to_returns(*windows, future=True),
+                    future_returns,
                 )
 
 

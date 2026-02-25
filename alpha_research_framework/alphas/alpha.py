@@ -5,15 +5,20 @@ import alpha_research_framework.market_data as md
 from alpha_research_framework.class_var_validator import ClassVarValidator
 from alpha_research_framework.features import (
     DailyFutureReturns,
+    DailyReturns,
     Feature,
     HalfYearlyFutureReturns,
+    HalfYearlyReturns,
     MonthlyFutureReturns,
+    MonthlyReturns,
     QuarterlyFutureReturns,
+    QuarterlyReturns,
     WeeklyFutureReturns,
+    WeeklyReturns,
     YearlyFutureReturns,
+    YearlyReturns,
 )
 from alpha_research_framework.features.dependency_error import DependencyError
-from alpha_research_framework.features.future_returns import FutureReturns
 from alpha_research_framework.operator import Operator
 from alpha_research_framework.universe import CrossSection
 from alpha_research_framework.window import Window
@@ -63,7 +68,9 @@ class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
             element_type=Window,
         )
 
-        cls.DEPENDENCIES.update(Alpha._horizons_to_future_returns(cls.HORIZONS))
+        cls.DEPENDENCIES.update(
+            set(Alpha._windows_to_returns(*cls.HORIZONS, future=True))
+        )
         cls._wrap_compute()
 
     @classmethod
@@ -76,24 +83,35 @@ class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
         ...
 
     @staticmethod
-    def _horizons_to_future_returns(
-        horizons: set[Window],
-    ) -> set[type[FutureReturns]]:
+    def _windows_to_returns(
+        *windows: Window,
+        future: bool=False
+    ) -> tuple[type[Feature],...]:
         """
-        Return a set containing a `FutureReturns` feature for each `Window` in
-        `horizons`.
+        Return a `Returns` or `FutureReturns` feature pertaining to each window
+        in `Windows`.
         """
 
-        horizon_to_future_returns: dict[Window, type[FutureReturns]] = {
-            Window.DAY: DailyFutureReturns,
-            Window.WEEK: WeeklyFutureReturns,
-            Window.MONTH: MonthlyFutureReturns,
-            Window.QUARTER: QuarterlyFutureReturns,
-            Window.HALF_YEAR: HalfYearlyFutureReturns,
-            Window.YEAR: YearlyFutureReturns,
-        }
-
-        return {horizon_to_future_returns[h] for h in horizons}
+        window_to_returns: dict[Window, type[Feature]] = dict()
+        if not future:
+            window_to_returns = {
+                Window.DAY: DailyReturns,
+                Window.WEEK: WeeklyReturns,
+                Window.MONTH: MonthlyReturns,
+                Window.QUARTER: QuarterlyReturns,
+                Window.HALF_YEAR: HalfYearlyReturns,
+                Window.YEAR: YearlyReturns,
+            }
+        else:
+            window_to_returns = {
+                Window.DAY: DailyFutureReturns,
+                Window.WEEK: WeeklyFutureReturns,
+                Window.MONTH: MonthlyFutureReturns,
+                Window.QUARTER: QuarterlyFutureReturns,
+                Window.HALF_YEAR: HalfYearlyFutureReturns,
+                Window.YEAR: YearlyFutureReturns,
+            }
+        return tuple(window_to_returns[window] for window in windows)
 
     @classmethod
     def _wrap_compute(cls) -> None:

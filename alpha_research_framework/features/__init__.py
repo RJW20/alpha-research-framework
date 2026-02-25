@@ -15,6 +15,7 @@ from .returns import (
     HalfYearlyReturns,
     MonthlyReturns,
     QuarterlyReturns,
+    Returns,
     WeeklyReturns,
     YearlyReturns,
 )
