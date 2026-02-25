@@ -10,10 +10,10 @@ from alpha_research_framework.features import (
     LogPrice,
     MonthlyReturns,
     QuarterlyReturns,
+    Returns,
     WeeklyReturns,
     YearlyReturns,
 )
-from alpha_research_framework.features.returns import Returns
 from tests.utils import RegistryIsolatedTestCase
 
 
