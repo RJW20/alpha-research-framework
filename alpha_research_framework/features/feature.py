@@ -137,18 +137,24 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
         s2 = np.zeros(N, dtype=np.float64)
         obs = np.zeros(N, dtype=np.int64)
 
+        # Account for lookback larger than T
+        if lookback > T:
+            windows_lt_lookback = T
+        else:
+            windows_lt_lookback = lookback
+
         # First windows < lookback
-        for t in range(lookback):
+        for t in range(windows_lt_lookback):
 
             vt = values[t]
             for j in range(N):
+                
                 v = vt[j]
                 if not np.isnan(v):
                     s[j] += v
                     s2[j] += v * v
                     obs[j] += 1
 
-            for j in range(N):
                 n = obs[j]
                 if n > 1:
                     out[t, j] = np.sqrt((s2[j] - (s[j] * s[j]) / n) / (n - 1))
@@ -156,7 +162,7 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
                     out[t, j] = np.nan
 
         # Rolling updates
-        for t in range(lookback, T):
+        for t in range(windows_lt_lookback, T):
             vt_old = values[t - lookback]
             vt_new = values[t]
 

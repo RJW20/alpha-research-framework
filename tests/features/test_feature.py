@@ -133,16 +133,18 @@ class TestFeatureCalculations(unittest.TestCase):
         x = rng.uniform(0, 10, (10000, 10)).astype(md.Scalar)
         nan_mask = rng.uniform(size=x.shape) < 0.1
         x[nan_mask] = np.nan
+
         for lookback in [1, 10, 100, 1000]:
+
             out = np.empty_like(x, dtype=md.Scalar)
             Feature._rolling_std(x, lookback, out)
-            df = pd.DataFrame(x)
-            expected = df.rolling(lookback, min_periods=1).std()
-            np.testing.assert_array_almost_equal(
-                out,
-                expected.to_numpy(dtype=md.Scalar),
-                decimal=5
+            expected = (
+                pd.DataFrame(x)
+                .rolling(lookback, min_periods=1)
+                .std()
+                .to_numpy(dtype=md.Scalar)
             )
+            np.testing.assert_array_almost_equal(out, expected)
 
 
 if __name__ == "__main__":

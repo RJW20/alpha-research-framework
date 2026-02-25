@@ -18,4 +18,11 @@ from .returns import (
     WeeklyReturns,
     YearlyReturns,
 )
-from .volatility import Volatility
+from .volatility import (
+    DailyVolatility,
+    HalfYearlyVolatility,
+    MonthlyVolatility,
+    QuarterlyVolatility,
+    WeeklyVolatility,
+    YearlyVolatility,
+)
