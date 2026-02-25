@@ -28,6 +28,12 @@ class Operator(ClassVarValidator, ABC):
     # Each concrete subclass must define a unique string ID
     ID: ClassVar[str]
 
+    def __init__(self) -> None:
+        raise TypeError(
+            f"{self.__class__.__name__} is a stateless operator and cannot be "
+            "instantiated"
+        )
+
     def __init_subclass__(
         cls,
         *,

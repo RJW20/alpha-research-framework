@@ -3,6 +3,14 @@ import unittest
 from alpha_research_framework.operator import Operator
 
 
+class TestOperatorInstantiation(unittest.TestCase):
+
+    def test_instantiation(self) -> None:
+        """Verify an Operator cannot be instantiated."""
+
+        with self.assertRaises(TypeError):
+            op = Operator()
+
 class TestOperatorId(unittest.TestCase):
 
     def test_class_var_assertion(self) -> None:
