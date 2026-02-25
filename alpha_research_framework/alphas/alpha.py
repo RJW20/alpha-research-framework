@@ -1,23 +1,9 @@
 from abc import abstractmethod
 from typing import Any, ClassVar
 
+import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
 from alpha_research_framework.class_var_validator import ClassVarValidator
-from alpha_research_framework.features import (
-    DailyFutureReturns,
-    DailyReturns,
-    Feature,
-    HalfYearlyFutureReturns,
-    HalfYearlyReturns,
-    MonthlyFutureReturns,
-    MonthlyReturns,
-    QuarterlyFutureReturns,
-    QuarterlyReturns,
-    WeeklyFutureReturns,
-    WeeklyReturns,
-    YearlyFutureReturns,
-    YearlyReturns,
-)
 from alpha_research_framework.features.dependency_error import DependencyError
 from alpha_research_framework.operator import Operator
 from alpha_research_framework.universe import CrossSection
@@ -41,13 +27,15 @@ class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
     """
 
     CATEGORY: ClassVar[str]
-    DEPENDENCIES: ClassVar[set[type[Feature]]]
+    DEPENDENCIES: ClassVar[set[type[features.Feature]]]
     HORIZONS: ClassVar[set[Window]]
 
     def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
         """
         If `abstract=False` asserts definition and type of `CATEGORY`,
-        `DEPENDENCIES` and `HORIZONS` and wraps `compute` with error reporting.
+        `DEPENDENCIES` and `HORIZONS`, adds `FutureReturns` features to
+        `DEPENDENCIES` for all `HORIZONS` and wraps `compute` with error
+        reporting.
         """
 
         kwargs["abstract"] = abstract
@@ -86,30 +74,30 @@ class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
     def _windows_to_returns(
         *windows: Window,
         future: bool=False
-    ) -> tuple[type[Feature],...]:
+    ) -> tuple[type[features.Feature],...]:
         """
         Return a `Returns` or `FutureReturns` feature pertaining to each window
         in `Windows`.
         """
 
-        window_to_returns: dict[Window, type[Feature]] = dict()
+        window_to_returns: dict[Window, type[features.Feature]] = dict()
         if not future:
             window_to_returns = {
-                Window.DAY: DailyReturns,
-                Window.WEEK: WeeklyReturns,
-                Window.MONTH: MonthlyReturns,
-                Window.QUARTER: QuarterlyReturns,
-                Window.HALF_YEAR: HalfYearlyReturns,
-                Window.YEAR: YearlyReturns,
+                Window.DAY: features.DailyReturns,
+                Window.WEEK: features.WeeklyReturns,
+                Window.MONTH: features.MonthlyReturns,
+                Window.QUARTER: features.QuarterlyReturns,
+                Window.HALF_YEAR: features.HalfYearlyReturns,
+                Window.YEAR: features.YearlyReturns,
             }
         else:
             window_to_returns = {
-                Window.DAY: DailyFutureReturns,
-                Window.WEEK: WeeklyFutureReturns,
-                Window.MONTH: MonthlyFutureReturns,
-                Window.QUARTER: QuarterlyFutureReturns,
-                Window.HALF_YEAR: HalfYearlyFutureReturns,
-                Window.YEAR: YearlyFutureReturns,
+                Window.DAY: features.DailyFutureReturns,
+                Window.WEEK: features.WeeklyFutureReturns,
+                Window.MONTH: features.MonthlyFutureReturns,
+                Window.QUARTER: features.QuarterlyFutureReturns,
+                Window.HALF_YEAR: features.HalfYearlyFutureReturns,
+                Window.YEAR: features.YearlyFutureReturns,
             }
         return tuple(window_to_returns[window] for window in windows)
 
@@ -128,7 +116,7 @@ class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
             try:
                 return original(x)
             except KeyError as e:
-                missing_dependency = Feature.from_id(e.args[0])
+                missing_dependency = features.Feature.from_id(e.args[0])
                 if missing_dependency not in cls.DEPENDENCIES:
                     raise DependencyError(
                         f"Alpha {cls.__name__} cannot be computed: to ensure "

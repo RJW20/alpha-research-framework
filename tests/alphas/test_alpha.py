@@ -2,26 +2,10 @@ import unittest
 from itertools import combinations
 from typing import override
 
+import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.alphas import Alpha
-from alpha_research_framework.features import (
-    DailyFutureReturns,
-    DailyReturns,
-    DependencyError,
-    Feature,
-    HalfYearlyFutureReturns,
-    HalfYearlyReturns,
-    MonthlyFutureReturns,
-    MonthlyReturns,
-    QuarterlyFutureReturns,
-    QuarterlyReturns,
-    Returns,
-    WeeklyFutureReturns,
-    WeeklyReturns,
-    YearlyFutureReturns,
-    YearlyReturns,
-)
 from alpha_research_framework.features.future_returns import FutureReturns
 from alpha_research_framework.universe import CrossSection
 from tests.utils import RegistryIsolatedTestCase
@@ -70,23 +54,40 @@ class TestAlphaDependencies(RegistryIsolatedTestCase):
                 CATEGORY = "test_dependencies"
                 DEPENDENCIES = {1}
 
+    def test_future_returns(self) -> None:
+        """
+        Verify `FutureReturns` dependency created for all windows in `HORIZONS`.
+        """
+
+        class WithHorizons(Alpha):
+            ID = "with_horizons"
+            CATEGORY = "testing_dependencies"
+            DEPENDENCIES = set()
+            HORIZONS = set(Window)
+
+        self.assertEqual(len(WithHorizons.DEPENDENCIES), len(Window))
+
     def test_wrap_compute(self) -> None:
         """
         Verify `compute` is wrapped wtih custom error reporting for insufficient
         `cls.DEPENDENCIES or `cross-section` argument.
         """
 
-        class TemporaryFeatureRoot(Feature, registry_root=True, abstract=True):
+        class TemporaryFeatureRoot(
+            features.Feature,
+            registry_root=True,
+            abstract=True
+        ):
             pass
 
         class NotDependedOn(TemporaryFeatureRoot):
             ID = "not_depended_on"
-            TAG = Feature.Tag.PREDICTOR
+            TAG = features.Feature.Tag.PREDICTOR
             DEPENDENCIES = set()
 
         class DependedOn(TemporaryFeatureRoot):
             ID = "depended_on"
-            TAG = Feature.Tag.PREDICTOR
+            TAG = features.Feature.Tag.PREDICTOR
             DEPENDENCIES = set()
 
         class HasCompute(Alpha, abstract=True):
@@ -101,10 +102,10 @@ class TestAlphaDependencies(RegistryIsolatedTestCase):
 
         HasCompute._wrap_compute()
 
-        with self.assertRaises(DependencyError):
+        with self.assertRaises(features.DependencyError):
             HasCompute.compute({DependedOn.ID: None})
 
-        with self.assertRaises(DependencyError):
+        with self.assertRaises(features.DependencyError):
             HasCompute.compute({NotDependedOn.ID: None})
 
         HasCompute.compute({NotDependedOn.ID: None, DependedOn.ID: None})
@@ -140,22 +141,22 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
 
     def test_windows_to_returns(self) -> None:
         """
-        Verify correct `Returns` or `FutureReturns` is returned per group of
-        `Window`s in the correct order.
+        Verify correct `Returns` or `FutureReturns` features are returned per
+        group of `Window`s in the same order as passed.
         """
 
         N = len(Window)
 
-        windows_ret_pairs: list[tuple[Window, type[Returns]]] = [
-            (Window.DAY, DailyReturns),
-            (Window.WEEK, WeeklyReturns),
-            (Window.MONTH, MonthlyReturns),
-            (Window.QUARTER, QuarterlyReturns),
-            (Window.HALF_YEAR, HalfYearlyReturns),
-            (Window.YEAR, YearlyReturns),
+        windows_returns_pairs: list[tuple[Window, type[features.Returns]]] = [
+            (Window.DAY, features.DailyReturns),
+            (Window.WEEK, features.WeeklyReturns),
+            (Window.MONTH, features.MonthlyReturns),
+            (Window.QUARTER, features.QuarterlyReturns),
+            (Window.HALF_YEAR, features.HalfYearlyReturns),
+            (Window.YEAR, features.YearlyReturns),
         ]
         for n in range(1, N + 1):
-            for pairs in combinations(windows_ret_pairs, n):
+            for pairs in combinations(windows_returns_pairs, n):
                 windows = tuple(pair[0] for pair in pairs)
                 returns = tuple(pair[1] for pair in pairs)
                 self.assertTupleEqual(
@@ -164,12 +165,12 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
                 )
 
         windows_fut_ret_pairs: list[tuple[Window, type[FutureReturns]]] = [
-            (Window.DAY, DailyFutureReturns),
-            (Window.WEEK, WeeklyFutureReturns),
-            (Window.MONTH, MonthlyFutureReturns),
-            (Window.QUARTER, QuarterlyFutureReturns),
-            (Window.HALF_YEAR, HalfYearlyFutureReturns),
-            (Window.YEAR, YearlyFutureReturns),
+            (Window.DAY, features.DailyFutureReturns),
+            (Window.WEEK, features.WeeklyFutureReturns),
+            (Window.MONTH, features.MonthlyFutureReturns),
+            (Window.QUARTER, features.QuarterlyFutureReturns),
+            (Window.HALF_YEAR, features.HalfYearlyFutureReturns),
+            (Window.YEAR, features.YearlyFutureReturns),
         ]
         for n in range(1, N + 1):
             for pairs in combinations(windows_fut_ret_pairs, n):
