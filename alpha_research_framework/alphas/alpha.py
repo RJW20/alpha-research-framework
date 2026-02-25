@@ -1,131 +1,125 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from typing import Any, ClassVar
 
 import alpha_research_framework.market_data as md
-from alpha_research_framework.alphas.alpha_error import AlphaError
-from alpha_research_framework.dependent import Dependent
-from alpha_research_framework.features import FeatureSpec, FutureReturns
+from alpha_research_framework.class_var_validator import ClassVarValidator
+from alpha_research_framework.features import (
+    DailyFutureReturns,
+    Feature,
+    HalfYearlyFutureReturns,
+    MonthlyFutureReturns,
+    QuarterlyFutureReturns,
+    WeeklyFutureReturns,
+    YearlyFutureReturns,
+)
+from alpha_research_framework.features.dependency_error import DependencyError
+from alpha_research_framework.features.future_returns import FutureReturns
+from alpha_research_framework.operator import Operator
 from alpha_research_framework.universe import CrossSection
 from alpha_research_framework.window import Window
 
 
-class Alpha(Dependent[FeatureSpec], ABC):
+class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
     """
     Abstract base class for cross-sectional alphas with automatic subclass
-    validation, runtime dependency enforcement and registry management.
+    validation and runtime missing dependency error reporting.
 
     Any concrete subclass must define:
-    - NAME: str - unique identifier
-    - CATEGORY: str - logical grouping label
-    - HORIZONS: set[Window] - prediction horizons for which the alpha will be
-    evaluated
-    - _init_dependencies(self) -> set[FeatureSpec] - features the alpha will
-    need to generate a signal
-    - compute(self, x: CrossSection) -> md.Array - signal per stock in
-    cross-section
-    Concrete compute() methods are automatically wrapped to enforce runtime
-    feature dependency checks.
+    - `ID`: `str` - unique identifier
+    - `CATEGORY`: `str` - logical grouping label
+    - `DEPENDENCIES`: `set[Feature]` - prerequisite features this alpha needs to
+    generate a signal
+    - `HORIZONS`: `set[Window]` - prediction horizons for which the alpha will
+    be evaluated against
+    - `compute(cls, x: CrossSection) -> md.Array:` - classmethod for calculating
+    the alpha
     """
 
-    __registry__: dict[str, type["Alpha"]] = dict()
+    CATEGORY: ClassVar[str]
+    DEPENDENCIES: ClassVar[set[type[Feature]]]
+    HORIZONS: ClassVar[set[Window]]
 
-    __abstract__ = True
-    __dependency_type__ = FeatureSpec
-
-    NAME: str | None = None
-    CATEGORY: str | None = None
-
-    HORIZONS: set[Window] | None = None
-
-    def __init_subclass__(cls) -> None:
+    def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
         """
-        Validate definition, type and value of NAME and CATEGORY and definition
-        and type of HORIZONS, wrap compute with runtime dependency check and add
-        subclass to registry.
+        If `abstract=False` asserts definition and type of `CATEGORY`,
+        `DEPENDENCIES` and `HORIZONS` and wraps `compute` with error reporting.
         """
 
-        super().__init_subclass__()
+        kwargs["abstract"] = abstract
+        super().__init_subclass__(**kwargs)
 
-        if cls is Alpha:
+        if abstract:
             return
         
-        if cls.__dict__.get("__abstract__", False):
-            return
-
-        if cls.NAME is None:
-            raise AlphaError(f"{cls.__name__} must define NAME.")
-        if not isinstance(cls.NAME, str):
-            raise TypeError(f"{cls.__name__}.NAME must be of type str.")
-        if not cls.NAME:
-            raise ValueError(f"{cls.__name__}.NAME cannot be empty.")
-        if cls.NAME in Alpha.__registry__:
-            raise AlphaError(
-                f"{cls.__name__}.NAME must be unique (alpha with NAME "
-                f"'{cls.NAME}' already exists)."
-            )
-        
-        if cls.CATEGORY is None:
-            raise AlphaError(f"{cls.__name__} must define CATEGORY.")
-        if not isinstance(cls.CATEGORY, str):
-            raise TypeError(f"{cls.__name__}.CATEGORY must be of type str.")
-        if not cls.CATEGORY:
-            raise ValueError(f"{cls.__name__}.CATEGORY cannot be empty.")
-        
-        if cls.HORIZONS is None:
-            raise AlphaError(f"{cls.__name__} must define HORIZONS.")
-        if (
-            not isinstance(cls.HORIZONS, set) or
-            not all(isinstance(h, Window) for h in cls.HORIZONS)
-        ):
-            raise TypeError(
-                f"{cls.__name__}.HORIZONS must be of type set[Window]."
-            )
-
-        cls._wrap_compute()
-
-        Alpha.__registry__[cls.NAME] = cls
-
-    @staticmethod
-    def from_name(name: str) -> type["Alpha"]:
-        """Return the alpha with NAME = name."""
-        if name not in Alpha.__registry__:
-            raise AlphaError(f"Alpha with NAME '{name}' does not exist.")
-        return Alpha.__registry__[name]
-    
-    @property
-    def required_features(self) -> set[FeatureSpec]:
-        """
-        Return a set containing feature specs of all dependencies and future
-        returns.
-        """
-        return set(
-            self.dependencies |
-            set(FeatureSpec(FutureReturns, h) for h in self.HORIZONS)
+        cls.assert_class_var(name="CATEGORY", type=str, bad_values={""})
+        cls.assert_class_var_container(
+            name="DEPENDENCIES",
+            container_type=set,
+            element_type=type,
+        )
+        cls.assert_class_var_container(
+            name="HORIZONS",
+            container_type=set,
+            element_type=Window,
         )
 
+        cls.DEPENDENCIES.update(Alpha._horizons_to_future_returns(cls.HORIZONS))
+        cls._wrap_compute()
+
+    @classmethod
     @abstractmethod
-    def compute(self, x: CrossSection) -> md.Array:
+    def compute(cls, x: CrossSection) -> md.Array:
         """
-        Return an md.Array containing raw cross-sectional alpha signal per
+        Return an `md.Array` containing raw cross-sectional alpha signal per
         stock.
         """
         ...
 
+    @staticmethod
+    def _horizons_to_future_returns(
+        horizons: set[Window],
+    ) -> set[type[FutureReturns]]:
+        """
+        Return a set containing a `FutureReturns` feature for each `Window` in
+        `horizons`.
+        """
+
+        horizon_to_future_returns: dict[Window, type[FutureReturns]] = {
+            Window.DAY: DailyFutureReturns,
+            Window.WEEK: WeeklyFutureReturns,
+            Window.MONTH: MonthlyFutureReturns,
+            Window.QUARTER: QuarterlyFutureReturns,
+            Window.HALF_YEAR: HalfYearlyFutureReturns,
+            Window.YEAR: YearlyFutureReturns,
+        }
+
+        return {horizon_to_future_returns[h] for h in horizons}
+
     @classmethod
     def _wrap_compute(cls) -> None:
-        """Wrap compute() to enforce runtime dependency validation."""
+        """
+        Wrap `compute` with error reporting for when `cls.DEPENDENCIES` or the
+        `cross-section` argument do not contain all required dependencies.
+        """
 
-        original = getattr(cls, "compute", None)
-        if original is None or getattr(original, "__isabstractmethod__", False):
+        original = getattr(cls, "compute")
+        if getattr(original, "__isabstractmethod__", False):
             return
 
-        def wrapper(self: Alpha, x: CrossSection) -> md.Array:
-            dependencies = {feature.name for feature in self._dependencies}
-            missing = dependencies - x.keys()
-            if missing:
-                raise AlphaError(
-                    f"Alpha {self.NAME} cannot be computed: missing feature "
-                    f"dependencies {missing}."
+        def wrapper(cls: type[Alpha], x: CrossSection) -> md.Array:
+            try:
+                return original(x)
+            except KeyError as e:
+                missing_dependency = Feature.from_id(e.args[0])
+                if missing_dependency not in cls.DEPENDENCIES:
+                    raise DependencyError(
+                        f"Alpha {cls.__name__} cannot be computed: to ensure "
+                        f"{missing_dependency.__name__} is available please "
+                        f"add it to {cls.__name__}.DEPENDENCIES"
+                    )
+                raise DependencyError(
+                    f"Alpha {cls.__name__} cannot be computed: missing "
+                    f"dependency {missing_dependency.__name__}"
                 )
-            return original(self, x)
 
-        setattr(cls, "compute", wrapper)
+        setattr(cls, "compute", classmethod(wrapper))

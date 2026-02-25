@@ -1,156 +1,156 @@
 import unittest
-
-import numpy as np
+from itertools import combinations
+from typing import override
 
 import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.alphas import Alpha
-from alpha_research_framework.alphas.alpha_error import AlphaError
-from alpha_research_framework.features import FeatureSpec
+from alpha_research_framework.features import (
+    DailyFutureReturns,
+    DependencyError,
+    Feature,
+    HalfYearlyFutureReturns,
+    MonthlyFutureReturns,
+    QuarterlyFutureReturns,
+    WeeklyFutureReturns,
+    YearlyFutureReturns,
+)
+from alpha_research_framework.features.future_returns import FutureReturns
 from alpha_research_framework.universe import CrossSection
-from tests.dummy_feature import DummyFeature
 from tests.utils import RegistryIsolatedTestCase
 
 
-class TestAlphaSubClassValidation(RegistryIsolatedTestCase):
+class TestAlphaCategory(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Alpha
 
-    def test_abstract(self) -> None:
-        """Verify subclass is not validated when __abstract__ is set."""
-
-        class Dummy(Alpha):
-            __abstract__ = True
-
-    def test_name(self) -> None:
+    def test_class_var_assertion(self) -> None:
         """
-        Verify definition, type and value of NAME validated when subclassing.
+        Verify definition and type of `CATEGORY` asserted when subclassing.
         """
 
-        with self.assertRaises(AlphaError):
-            class Dummy(Alpha):
-                pass
+        with self.assertRaises(AttributeError):
+            class NoCategory(Alpha):
+                ID = "no_category"
 
         with self.assertRaises(TypeError):
-            class Dummy(Alpha):
-                NAME = 123
-
-        with self.assertRaises(ValueError):
-            class Dummy(Alpha):
-                NAME = ""
-
-    def test_category(self) -> None:
-        """
-        Verify definition, type and value of CATEGORY validated when
-        subclassing.
-        """
-
-        with self.assertRaises(AlphaError):
-            class Dummy(Alpha):
-                NAME = "dummy"
-
-        with self.assertRaises(TypeError):
-            class Dummy(Alpha):
-                NAME = "dummy"
-                CATEGORY = 123
-
-        with self.assertRaises(ValueError):
-            class Dummy(Alpha):
-                NAME = "dummy"
-                CATEGORY = ""
-
-    def test_horizons(self) -> None:
-        """
-        Verify definition and type of HORIZONS validated when subclassing.
-        """
-
-        with self.assertRaises(AlphaError):
-            class Dummy(Alpha):
-                NAME = "dummy"
-                CATEGORY = "dummy"
-
-        with self.assertRaises(TypeError):
-            class Dummy(Alpha):
-                NAME = "dummy"
-                CATEGORY = "dummy"
-                HORIZONS = list(Window)
-
-        with self.assertRaises(TypeError):
-            class Dummy(Alpha):
-                NAME = "dummy"
-                CATEGORY = "dummy"
-                HORIZONS = {"a", 123}
-
-    def test_registry(self) -> None:
-        """Verify subclasses are only added to registry if NAME is unique."""
-        
-        class Dummy1(Alpha):
-            NAME = "test_registry_dummy"
-            CATEGORY = "dummy"
-            HORIZONS = set()
-        with self.assertRaises(AlphaError):
-            class Dummy2(Alpha):
-                NAME = "test_registry_dummy"
-                CATEGORY = "dummy"
-                HORIZONS = set()
-
-    def test_from_name(self) -> None:
-        """Verify alpha returned has correct name."""
-
-        class Dummy(Alpha):
-            NAME = "test_from_name_dummy"
-            CATEGORY = "dummy"
-            HORIZONS = set()
-        self.assertEqual(Alpha.from_name(Dummy.NAME).NAME, Dummy.NAME)
-
-    def test_from_invalid_id(self) -> None:
-        """Verify an error is raised when alpha name is fictional."""
-
-        with self.assertRaises(AlphaError):
-            Alpha.from_name("abc")
+            class IncompatibleCategory(Alpha):
+                ID = "incompatible_tag"
+                CATEGORY = 1
 
 
 class TestAlphaDependencies(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Alpha
 
-    def test_required_features(self) -> None:
+    def test_class_var_assertion(self) -> None:
         """
-        Verify required_features property contains all dependencies and
-        FutureReturns at required horizons.
+        Verify definition and type of `DEPENDENCIES` asserted when subclassing.
         """
 
-        class Dummy(Alpha):
-            __abstract__ = True
-            HORIZONS = set(Window)
-            def compute(self, x: CrossSection) -> md.Array:
-                pass
-            def _init_dependencies(self) -> set[FeatureSpec]:
-                return {FeatureSpec(DummyFeature)}
-            
-        dummy = Dummy()
-        self.assertEqual(len(dummy.required_features), len(Window) + 1)
+        with self.assertRaises(AttributeError):
+            class NoDependencies(Alpha):
+                ID = "no_dependencies"
+                CATEGORY = "testing_dependencies"
 
-    def test_compute_existence(self) -> None:
-        """Verify compute method wrapper checks dependency existence."""
+        with self.assertRaises(TypeError):
+            class IncompatibleDependenciesContainer(Alpha):
+                ID = "incompatible_dependencies_container"
+                CATEGORY = "test_dependencies"
+                DEPENDENCIES = list()
 
-        class Dummy(Alpha):
-            NAME = "dummy"
-            CATEGORY = "dummy"
-            HORIZONS = set()
-            def compute(self, x: CrossSection) -> md.Array:
-                pass
-            def _init_dependencies(self) -> set[FeatureSpec]:
-                return {FeatureSpec(DummyFeature)}
+        with self.assertRaises(TypeError):
+            class IncompatibleDependenciesElement(Alpha):
+                ID = "incompatible_dependencies_element"
+                CATEGORY = "test_dependencies"
+                DEPENDENCIES = {1}
 
-        dummy = Dummy()
+    def test_wrap_compute(self) -> None:
+        """
+        Verify `compute` is wrapped wtih custom error reporting for insufficient
+        `cls.DEPENDENCIES or `cross-section` argument.
+        """
 
-        x = CrossSection()
-        with self.assertRaises(AlphaError):
-            dummy.compute(x)
+        class TemporaryFeatureRoot(Feature, registry_root=True, abstract=True):
+            pass
 
-        for feature in dummy.required_features:
-            x[feature.name] = np.array([])
+        class NotDependedOn(TemporaryFeatureRoot):
+            ID = "not_depended_on"
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = set()
 
-        dummy.compute(x)
+        class DependedOn(TemporaryFeatureRoot):
+            ID = "depended_on"
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = set()
+
+        class HasCompute(Alpha, abstract=True):
+            DEPENDENCIES = {DependedOn}
+            @classmethod
+            @override
+            def compute(cls, x: CrossSection) -> md.Array:
+                # attempt to use non-dependency
+                x[NotDependedOn.ID]
+                # attempt to use the dependency
+                x[DependedOn.ID]
+
+        HasCompute._wrap_compute()
+
+        with self.assertRaises(DependencyError):
+            HasCompute.compute({DependedOn.ID: None})
+
+        with self.assertRaises(DependencyError):
+            HasCompute.compute({NotDependedOn.ID: None})
+
+        HasCompute.compute({NotDependedOn.ID: None, DependedOn.ID: None})
+
+
+class TestAlphaHorizons(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
+
+    def test_class_var_assertion(self) -> None:
+        """
+        Verify definition and type of `HORIZONS` asserted when subclassing.
+        """
+
+        with self.assertRaises(AttributeError):
+            class NoHorizons(Alpha):
+                ID = "no_horizons"
+                CATEGORY = "testing_horizons"
+                DEPENDENCIES = set()
+
+        with self.assertRaises(TypeError):
+            class IncompatibleHorizonsContainer(Alpha):
+                ID = "incompatible_horizons_container"
+                CATEGORY = "testing_horizons"
+                DEPENDENCIES = set()
+                HORIZONS = list()
+
+        with self.assertRaises(TypeError):
+            class IncompatibleHorizonsElement(Alpha):
+                ID = "incompatible_horizons_element"
+                CATEGORY = "testing_horizons"
+                DEPENDENCIES = set()
+                HORIZONS = {1}
+
+    def test_horizons_to_future_returns(self) -> None:
+        """Verify correct `FutureReturns` is returned per `Window`."""
+
+        windows_fut_ret_pairs: list[tuple[Window, type[FutureReturns]]] = [
+            (Window.DAY, DailyFutureReturns),
+            (Window.WEEK, WeeklyFutureReturns),
+            (Window.MONTH, MonthlyFutureReturns),
+            (Window.QUARTER, QuarterlyFutureReturns),
+            (Window.HALF_YEAR, HalfYearlyFutureReturns),
+            (Window.YEAR, YearlyFutureReturns),
+        ]
+        N = len(Window)
+        for n in range(1, N + 1):
+            for pairs in combinations(windows_fut_ret_pairs, n):
+                windows = {pair[0] for pair in pairs}
+                future_returns = {pair[1] for pair in pairs}
+                self.assertSetEqual(
+                    Alpha._horizons_to_future_returns(set(windows)),
+                    set(future_returns),
+                )
 
 
 if __name__ == "__main__":
