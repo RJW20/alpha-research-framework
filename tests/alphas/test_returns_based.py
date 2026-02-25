@@ -2,59 +2,51 @@ import unittest
 
 import numpy as np
 
+import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.alphas import Alpha
-from alpha_research_framework.alphas.alpha_error import AlphaError
 from alpha_research_framework.alphas.returns_based import ReturnsBased
-from alpha_research_framework.features import Returns
-from alpha_research_framework.universe import CrossSection
 from tests.utils import RegistryIsolatedTestCase
 
 
-class TestReturnsBasedSubClassValidation(RegistryIsolatedTestCase):
+class TestReturnsBasedLookback(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Alpha
 
-    def test_abstract(self) -> None:
-        """Verify subclass is not validated when __abstract__ is set."""
-
-        class Dummy(ReturnsBased):
-            __abstract__ = True
-
-    def test_lookback(self) -> None:
+    def test_class_var_assertion(self) -> None:
         """
-        Verify definition and type of LOOKBACK validated when subclassing.
+        Verify definition and type of `LOOKBACK` asserted when subclassing.
         """
 
-        with self.assertRaises(AlphaError):
-            class Dummy1(ReturnsBased):
-                NAME = "dummy_1"
-                CATEGORY = "dummy"
-                HORIZONS = set()
+        with self.assertRaises(AttributeError):
+            class NoLookback(ReturnsBased):
+                ID = "no_lookback"
+                CATEGORY = "testing_lookback"
 
         with self.assertRaises(TypeError):
-            class Dummy2(ReturnsBased):
-                NAME = "dummy_2"
-                CATEGORY = "dummy"
-                HORIZONS = set()
+            class IncompatibleLookback(ReturnsBased):
+                ID = "incompatible_lookback"
+                CATEGORY = "testing_lookback"
                 LOOKBACK = 1
 
-    def test_skip(self) -> None:
-        """Verify type and value of SKIP validated when subclassing."""
+
+class TestReturnsBasedSkip(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
+
+    def test_class_var_assertion(self) -> None:
+        """Verify type and value of `SKIP` asserted when subclassing."""
 
         with self.assertRaises(TypeError):
-            class Dummy1(ReturnsBased):
-                NAME = "dummy_1"
-                CATEGORY = "dummy"
-                HORIZONS = set()
+            class IncompatibleSkip(ReturnsBased):
+                ID = "incompatible_skip"
+                CATEGORY = "testing_skip"
                 LOOKBACK = Window.DAY
                 SKIP = 1
 
         with self.assertRaises(ValueError):
-            class Dummy2(ReturnsBased):
-                NAME = "dummy_2"
-                CATEGORY = "dummy"
-                HORIZONS = set()
+            class LargerSkip(ReturnsBased):
+                ID = "larger_skip"
+                CATEGORY = "testing_skip"
                 LOOKBACK = Window.DAY
                 SKIP = Window.DAY
 
@@ -62,68 +54,104 @@ class TestReturnsBasedSubClassValidation(RegistryIsolatedTestCase):
 class TestReturnsBasedDependencies(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Alpha
 
-    def test_init(self) -> None:
+    def test_no_skip(self) -> None:
+        """Verify only `_RETURNS_LOOKBACK` dependency created."""
+
+        class NoSkip(ReturnsBased):
+            ID = "no_skip"
+            CATEGORY = "testing_dependencies"
+            LOOKBACK = Window.DAY
+            HORIZONS = set()
+
+        self.assertIs(NoSkip._RETURNS_LOOKBACK, features.DailyReturns)
+        self.assertIsNone(NoSkip._RETURNS_SKIP)
+        self.assertEqual(len(NoSkip.DEPENDENCIES), 1)
+
+    def test_with_skip(self) -> None:
         """
-        Verify the number of dependencies created depending on the definition
-        of SKIP.
+        Verify both `_RETURNS_LOOKBACK` and `_RETURNS_SKIP` dependencies
+        created.
         """
 
-        class Dummy(ReturnsBased):
-            __abstract__ = True
+        class WithSkip(ReturnsBased):
+            ID = "with_skip"
+            CATEGORY = "testing_dependencies"
             LOOKBACK = Window.WEEK
+            SKIP = Window.DAY
+            HORIZONS = set()
 
-        dummy = Dummy()
-        self.assertEqual(len(dummy._init_dependencies()), 1)
-
-        Dummy.SKIP = Window.DAY
-        self.assertEqual(len(dummy._init_dependencies()), 2)
+        self.assertIs(WithSkip._RETURNS_LOOKBACK, features.WeeklyReturns)
+        self.assertIs(WithSkip._RETURNS_SKIP, features.DailyReturns)
+        self.assertEqual(len(WithSkip.DEPENDENCIES), 2)
 
 
 class TestReturnsBasedCompute(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Alpha
 
+    T = 5000
+    N = 500
+
     def test_compute(self) -> None:
         """
-        Verify compute returns the returns over LOOKBACK or between LOOKBACK
-        and SKIP.
+        Verify `compute` returns the returns over `LOOKBACK` or between
+        `LOOKBACK` and `SKIP`.
         """
 
         rng = np.random.default_rng(0)
+        windows_return_pairs: list[tuple[Window, type[features.Returns]]] = [
+            (Window.DAY, features.DailyReturns),
+            (Window.WEEK, features.WeeklyReturns),
+            (Window.MONTH, features.MonthlyReturns),
+            (Window.QUARTER, features.QuarterlyReturns),
+            (Window.HALF_YEAR, features.HalfYearlyReturns),
+            (Window.YEAR, features.YearlyReturns),
+        ]
+        for lookback, lookback_returns in windows_return_pairs:
 
-        for lookback in Window:
-
-            x = CrossSection()
-            returns_lookback = Returns(lookback)
-            x[returns_lookback.name] = rng.uniform(0, 10, 100).astype(md.Scalar)
-            
-            class DummyNoSkip(ReturnsBased):
-                NAME = f"dummy_no_skip_{lookback.value}"
-                CATEGORY = "dummy"
-                HORIZONS = set()
+            class LookbackOnly(ReturnsBased):
+                ID = f"lookback_{lookback.value}_only"
+                CATEGORY = "testing_compute"
                 LOOKBACK = lookback
-            dummy = DummyNoSkip()
+                HORIZONS = set()
 
+            returns_over_lookback = rng.uniform(
+                0,
+                10,
+                size=(TestReturnsBasedCompute.T, TestReturnsBasedCompute.N),
+            ).astype(md.Scalar)
+            nan_mask = rng.uniform(size=returns_over_lookback.shape) < 0.1
+            returns_over_lookback[nan_mask] = np.nan
+            x = {lookback_returns.ID: returns_over_lookback}
             np.testing.assert_array_equal(
-                    dummy.compute(x),
-                    x[returns_lookback.name]
-                )
+                LookbackOnly.compute(x),
+                returns_over_lookback,
+            )
             
-            for skip in [w for w in Window if w < lookback]:
+            for skip, skip_returns in windows_return_pairs:
+                if not skip < lookback:
+                    continue
 
-                returns_skip = Returns(skip)
-                x[returns_skip.name] = rng.uniform(0, 10, 100).astype(md.Scalar)
-
-                class Dummy(ReturnsBased):
-                    NAME = f"dummy_{lookback.value}_{skip.value}"
-                    CATEGORY = "dummy"
-                    HORIZONS = set()
+                class LookbackAndSkip(ReturnsBased):
+                    ID = f"lookback_{lookback.value}_skip_{skip.value}"
+                    CATEGORY = "testing_compute"
                     LOOKBACK = lookback
                     SKIP = skip
-                dummy = Dummy()
+                    HORIZONS = set()
 
+                returns_over_skip = rng.uniform(
+                    0,
+                    10,
+                    size=(TestReturnsBasedCompute.T, TestReturnsBasedCompute.N),
+                ).astype(md.Scalar)
+                nan_mask = rng.uniform(size=returns_over_skip.shape) < 0.1
+                returns_over_skip[nan_mask] = np.nan
+                x = {
+                    lookback_returns.ID: returns_over_lookback,
+                    skip_returns.ID: returns_over_skip,
+                }
                 np.testing.assert_array_equal(
-                    dummy.compute(x),
-                    x[returns_lookback.name] - x[returns_skip.name]
+                    LookbackAndSkip.compute(x),
+                    returns_over_lookback - returns_over_skip,
                 )
 
 

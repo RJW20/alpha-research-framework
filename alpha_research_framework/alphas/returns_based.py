@@ -1,75 +1,72 @@
+from typing import Any, ClassVar, override
+
 import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
 from alpha_research_framework.alphas.alpha import Alpha
-from alpha_research_framework.alphas.alpha_error import AlphaError
-from alpha_research_framework.features import FeatureSpec
 from alpha_research_framework.universe import CrossSection
 from alpha_research_framework.window import Window
 
 
-class ReturnsBased(Alpha):
+class ReturnsBased(Alpha, abstract=True):
     """
     Abstract base class for returns-based cross-sectional alphas with automatic
     subclass validation.
 
     Any concrete subclass must define:
-    - NAME: str - unique identifier
-    - CATEGORY: str - logical grouping label
-    - LOOKBACK: Window - period into the past to track returns from
-    - (optional) SKIP: Window - period into the past to stop tracking returns (
-    must be less than LOOKBACK)
-    - HORIZONS: set[Window] - prediction horizons for which the alpha will be
-    evaluated
+    - `ID`: `str` - unique identifier
+    - `CATEGORY`: `str` - logical grouping label
+    - `LOOKBACK`: `Window` - duration of past returns to use in signal
+    calculation
+    - (optional) `SKIP`: `Window` - duration of past returns to ignore in signal
+    calculation (must be less than `LOOKBACK`)
+    - `HORIZONS`: `set[Window]` - prediction horizons for which the alpha will
+    be evaluated against
     """
 
-    __abstract__ = True
+    LOOKBACK: ClassVar[Window]
+    SKIP: ClassVar[Window]
 
-    LOOKBACK: Window | None = None
-    SKIP: Window | None = None
+    _RETURNS_LOOKBACK: ClassVar[type[features.Returns]]
+    _RETURNS_SKIP: ClassVar[type[features.Returns] | None]
 
-    def __init_subclass__(cls) -> None:
-        """Validate definition, type and value of LOOKBACK and SKIP."""
+    def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
+        """
+        If `abstract=False` asserts definition and type of `LOOKBACK`,
+        definition, type and value (compared to `LOOKBACK`) of `SKIP` and
+        configures `DEPENDENCIES`.
+        """
 
-        super().__init_subclass__()
+        if not abstract:
 
-        if cls is ReturnsBased:
-            return
-        
-        if cls.__dict__.get("__abstract__", False):
-            return
+            cls.assert_class_var(name="LOOKBACK", type=Window)
 
-        if cls.LOOKBACK is None:
-            raise AlphaError(f"{cls.__name__} must define LOOKBACK.")
-        if not isinstance(cls.LOOKBACK, Window):
-            raise TypeError(f"{cls.__name__}.LOOKBACK must be of type Window.")
-    
-        if cls.SKIP is not None:
-            if not isinstance(cls.SKIP, Window):
-                raise TypeError(f"{cls.__name__}.SKIP must be of type Window.")
-            if not cls.SKIP < cls.LOOKBACK:
-                raise ValueError(
-                    f"{cls.__name__}.SKIP must be less than "
-                    f"{cls.__name__}.LOOKBACK."
+            try:
+                cls.assert_class_var(name="SKIP", type=Window)
+                if not cls.SKIP < cls.LOOKBACK:
+                    raise ValueError(
+                        f"{cls.__name__}.SKIP must be less than "
+                        f"{cls.__name__}.LOOKBACK"
+                    )
+                cls._RETURNS_LOOKBACK, cls._RETURNS_SKIP = (
+                    Alpha._windows_to_returns(cls.LOOKBACK, cls.SKIP)
                 )
+                cls.DEPENDENCIES = {cls._RETURNS_LOOKBACK, cls._RETURNS_SKIP}
+            except AttributeError:
+                cls._RETURNS_LOOKBACK, cls._RETURNS_SKIP = (
+                    *Alpha._windows_to_returns(cls.LOOKBACK),
+                    None,
+                )
+                cls.DEPENDENCIES = {cls._RETURNS_LOOKBACK}
 
-    def compute(self, x: CrossSection) -> md.Array:
-        """a_t = r_{t-lookback} - r_{t-skip}"""
+        kwargs["abstract"] = abstract
+        super().__init_subclass__(**kwargs)
 
-        if self._returns_skip is not None:
-            return x[self._returns_lookback.name] - x[self._returns_skip.name]
+    @classmethod
+    @override
+    def compute(cls, x: CrossSection) -> md.Array:
+        """`a_t = r_{t-lookback} - r_{t-skip}`"""
+
+        if cls._RETURNS_SKIP is not None:
+            return x[cls._RETURNS_LOOKBACK.ID] - x[cls._RETURNS_SKIP.ID]
         else:
-            return x[self._returns_lookback.name]
-        
-    def _init_dependencies(self) -> set[FeatureSpec]:
-        """
-        Create a dependency for returns over LOOKBACK (and SKIP if present).
-        """
-
-        self._returns_lookback = FeatureSpec(features.Returns, self.LOOKBACK)
-        dependencies = {self._returns_lookback}
-        if self.SKIP is not None:
-            self._returns_skip = FeatureSpec(features.Returns, self.SKIP)
-            dependencies.add(self._returns_skip)
-        else:
-            self._returns_skip = None
-        return dependencies
+            return x[cls._RETURNS_LOOKBACK.ID]
