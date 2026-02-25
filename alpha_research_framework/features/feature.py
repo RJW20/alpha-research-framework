@@ -41,11 +41,9 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
 
     def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
         """
-        Initialise a new subclass.
-
         If `abstract=False` asserts definition and type of `TAG`, definition,
         type and `TAG` of `DEPENDENCIES`, and wraps `compute` with error
-        reporting for incomplete `features` argument.
+        reporting.
         """
 
         kwargs["abstract"] = abstract
@@ -96,7 +94,8 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
     @classmethod
     def _wrap_compute(cls) -> None:
         """
-        Wrap `compute` with error reporting for incomplete `features` argument.
+        Wrap `compute` with error reporting for when `cls.DEPENDENCIES` or the
+        `features` argument do not contain all required dependencies.
         """
 
         original = getattr(cls, "compute")
@@ -113,6 +112,12 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
                 original(market_data, features, out)
             except KeyError as e:
                 missing_dependency = cls.from_id(e.args[0])
+                if missing_dependency not in cls.DEPENDENCIES:
+                    raise DependencyError(
+                        f"Feature {cls.__name__} cannot be computed: to ensure "
+                        f"{missing_dependency.__name__} is available please "
+                        f"add it to {cls.__name__}.DEPENDENCIES"
+                    )
                 raise DependencyError(
                     f"Feature {cls.__name__} cannot be computed: missing "
                     f"dependency {missing_dependency.__name__}"

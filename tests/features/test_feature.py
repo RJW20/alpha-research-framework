@@ -22,7 +22,6 @@ class TestFeatureTag(RegistryIsolatedTestCase):
         with self.assertRaises(AttributeError):
             class NoTag(Feature):
                 ID = "no_tag"
-                pass
 
         with self.assertRaises(TypeError):
             class IncompatibleTag(Feature):
@@ -91,9 +90,14 @@ class TestFeatureDependencies(RegistryIsolatedTestCase):
 
     def test_wrap_compute(self) -> None:
         """
-        Verify `compute` is wrapped wtih custom error reporting for incomplete
-        `features` argument.
+        Verify `compute` is wrapped wtih custom error reporting for insufficient
+        `cls.DEPENDENCIES or `features` argument.
         """
+
+        class NotDependedOn(Feature):
+            ID = "not_depended_on"
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = set()
 
         class DependedOn(Feature):
             ID = "depended_on"
@@ -110,15 +114,24 @@ class TestFeatureDependencies(RegistryIsolatedTestCase):
                 features: Features,
                 out: md.Array,
             ) -> None:
+                # attempt to use non-dependency
+                features[NotDependedOn.ID]
                 # attempt to use the dependency
                 features[DependedOn.ID]
 
         HasCompute._wrap_compute()
 
         with self.assertRaises(DependencyError):
-            HasCompute.compute(None, dict(), None)
+            HasCompute.compute(None, {DependedOn.ID: None}, None)
 
-        HasCompute.compute(None, {DependedOn.ID: None}, None)
+        with self.assertRaises(DependencyError):
+            HasCompute.compute(None, {NotDependedOn.ID: None}, None)
+
+        HasCompute.compute(
+            None,
+            {NotDependedOn.ID: None, DependedOn.ID: None},
+            None,
+        )
 
 
 class TestFeatureCalculations(unittest.TestCase):
