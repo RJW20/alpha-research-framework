@@ -42,8 +42,6 @@ class Operator(ClassVarValidator, ABC):
         **kwargs: Any,
     ) -> None:
         """
-        Initialise a new subclass.
-
         If `registry_root=True` initialises a new `__registry__`.
         If `abstract=False` asserts definition, type, value and uniqueness of
         `ID` and adds subclass to `__registry__`.
