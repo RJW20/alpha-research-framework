@@ -1,28 +1,24 @@
-from functools import cached_property
+from typing import override
 
 import numpy as np
 
 import alpha_research_framework.market_data as md
 from alpha_research_framework.features.feature import Feature
-from alpha_research_framework.features.feature_spec import FeatureSpec
 from alpha_research_framework.features.features import Features
 
 
 class LogPrice(Feature):
 
+    ID = "log_price"
     TAG = Feature.Tag.PREDICTOR
+    DEPENDENCIES = set()
 
-    @cached_property
-    def name(self) -> str:
-        return "log_price"
-    
-    def _init_dependencies(self) -> set[FeatureSpec]:
-        return set()
-
+    @classmethod
+    @override
     def compute(
-        self,
+        cls,
         market_data: md.MarketData,
         features: Features,
-        out: md.Array
+        out: md.Array,
     ) -> None:
         out[:] = np.log(market_data.price)

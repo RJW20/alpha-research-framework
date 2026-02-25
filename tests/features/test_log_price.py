@@ -11,19 +11,16 @@ class TestLogPrice(unittest.TestCase):
 
     def test_compute(self) -> None:
         """
-        Verify out is populated with values that are the log of the market data
-        prices.
+        Verify `out` is populated with values that are the log of
+        `market_data.price`.
         """
 
-        log_price = LogPrice()
         market_data = DummyMarketData(
             np.array([10.0, 11.0, 12.0], dtype=md.Scalar),
             np.array([], dtype=md.Scalar)
         )
         out = np.empty_like(market_data.price, dtype=md.Scalar)
-
-        log_price.compute(market_data, {}, out)
-
+        LogPrice.compute(market_data, {}, out)
         expected = np.log(market_data.price)
         np.testing.assert_array_equal(out, expected)
 
