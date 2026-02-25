@@ -24,6 +24,7 @@ from .volatility import (
     HalfYearlyVolatility,
     MonthlyVolatility,
     QuarterlyVolatility,
+    Volatility,
     WeeklyVolatility,
     YearlyVolatility,
 )

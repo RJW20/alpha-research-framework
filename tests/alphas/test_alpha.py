@@ -139,6 +139,10 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
                 DEPENDENCIES = set()
                 HORIZONS = {1}
 
+
+class TestAlphaWindowsToFeatures(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
+
     def test_windows_to_returns(self) -> None:
         """
         Verify correct `Returns` or `FutureReturns` features are returned per
@@ -179,6 +183,31 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
                 self.assertTupleEqual(
                     Alpha._windows_to_returns(*windows, future=True),
                     future_returns,
+                )
+        
+    def test_windows_to_volatilities(self) -> None:
+        """
+        Verify correct `Volatilities` features are returned per group of
+        `Window`s in the correct order as passed.
+        """
+
+        N = len(Window)
+
+        windows_vol_pairs: list[tuple[Window, type[features.Volatility]]] = [
+            (Window.DAY, features.DailyVolatility),
+            (Window.WEEK, features.WeeklyVolatility),
+            (Window.MONTH, features.MonthlyVolatility),
+            (Window.QUARTER, features.QuarterlyVolatility),
+            (Window.HALF_YEAR, features.HalfYearlyVolatility),
+            (Window.YEAR, features.YearlyVolatility),
+        ]
+        for n in range(1, N + 1):
+            for pairs in combinations(windows_vol_pairs, n):
+                windows = tuple(pair[0] for pair in pairs)
+                volatilities = tuple(pair[1] for pair in pairs)
+                self.assertTupleEqual(
+                    Alpha._windows_to_volatilities(*windows),
+                    volatilities,
                 )
 
 

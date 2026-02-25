@@ -14,8 +14,8 @@ class Volatility(Feature, ClassVarValidator, abstract=True):
     validation.
 
     Any concrete subclass must define:
-    - `LOOKBACK`: `Window` - duration of period into the past to track returns
-    over
+    - `LOOKBACK`: `Window` - duration of period into the past to track rolling
+    volatility over
     """
 
     TAG = Feature.Tag.PREDICTOR
@@ -43,7 +43,9 @@ class Volatility(Feature, ClassVarValidator, abstract=True):
         features: Features,
         out: md.Array
     ) -> None:
-        """`s_t = sqrt(sum(r_{t-lookback+1}, ..., r_{t}) / (lookback - 1))`"""
+        """
+        `sigma_t = sqrt(sum(r_{t-lookback+1}, ..., r_{t}) / (lookback - 1))`
+        """
 
         lookback = cls.LOOKBACK.value
         ret_1d = features[DailyReturns.ID]

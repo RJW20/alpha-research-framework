@@ -100,6 +100,24 @@ class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
                 Window.YEAR: features.YearlyFutureReturns,
             }
         return tuple(window_to_returns[window] for window in windows)
+    
+    @staticmethod
+    def _windows_to_volatilities(
+        *windows: Window,
+    ) -> tuple[type[features.Volatility],...]:
+        """
+        Return a `Volatility` feature pertaining to each window in `Window`s.
+        """
+
+        window_to_volatility: dict[Window, type[features.Volatility]] = {
+            Window.DAY: features.DailyVolatility,
+            Window.WEEK: features.WeeklyVolatility,
+            Window.MONTH: features.MonthlyVolatility,
+            Window.QUARTER: features.QuarterlyVolatility,
+            Window.HALF_YEAR: features.HalfYearlyVolatility,
+            Window.YEAR: features.YearlyVolatility,
+        }
+        return tuple(window_to_volatility[window] for window in windows)
 
     @classmethod
     def _wrap_compute(cls) -> None:
