@@ -6,6 +6,7 @@ import alpha_research_framework.market_data as md
 from alpha_research_framework.features import (
     DailyFutureReturns,
     Feature,
+    FutureReturns,
     HalfYearlyFutureReturns,
     LogPrice,
     MonthlyFutureReturns,
@@ -13,7 +14,6 @@ from alpha_research_framework.features import (
     WeeklyFutureReturns,
     YearlyFutureReturns,
 )
-from alpha_research_framework.features.future_returns import FutureReturns
 from tests.utils import RegistryIsolatedTestCase
 
 

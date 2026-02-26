@@ -6,7 +6,7 @@ import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
 from alpha_research_framework import Window
 from alpha_research_framework.alphas import Alpha
-from alpha_research_framework.features.future_returns import FutureReturns
+from alpha_research_framework.features import FutureReturns
 from alpha_research_framework.universe import CrossSection
 from tests.utils import RegistryIsolatedTestCase
 

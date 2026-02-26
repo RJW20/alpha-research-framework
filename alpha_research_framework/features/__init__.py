@@ -3,6 +3,7 @@ from .feature import Feature
 from .features import Features
 from .future_returns import (
     DailyFutureReturns,
+    FutureReturns,
     HalfYearlyFutureReturns,
     MonthlyFutureReturns,
     QuarterlyFutureReturns,
