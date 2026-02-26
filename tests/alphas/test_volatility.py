@@ -36,14 +36,17 @@ class TestVolatilityDependencies(RegistryIsolatedTestCase):
     def test_volatility_lookback(self) -> None:
         """Verify `_VOLATILITY_LOOKBACK` dependency created."""
 
-        class NoSkip(Volatility):
-            ID = "no_skip"
+        class VolatilityLookback(Volatility):
+            ID = "volatility_lookback"
             CATEGORY = "testing_dependencies"
             LOOKBACK = Window.DAY
             HORIZONS = set()
 
-        self.assertIs(NoSkip._VOLATILITY_LOOKBACK, features.DailyVolatility)
-        self.assertEqual(len(NoSkip.DEPENDENCIES), 1)
+        self.assertIs(
+            VolatilityLookback._VOLATILITY_LOOKBACK,
+            features.DailyVolatility,
+        )
+        self.assertEqual(len(VolatilityLookback.DEPENDENCIES), 1)
 
 
 class TestVolatilityCompute(RegistryIsolatedTestCase):
@@ -59,6 +62,7 @@ class TestVolatilityCompute(RegistryIsolatedTestCase):
         """
 
         rng = np.random.default_rng(0)
+        
         windows_vol_pairs: list[tuple[Window, type[features.Volatility]]] = [
             (Window.DAY, features.DailyVolatility),
             (Window.WEEK, features.WeeklyVolatility),

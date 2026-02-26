@@ -32,13 +32,15 @@ class ReturnsBased(Alpha, abstract=True):
     def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
         """
         If `abstract=False` asserts definition and type of `LOOKBACK`,
-        definition, type and value (compared to `LOOKBACK`) of `SKIP` and
+        type and value (compared to `LOOKBACK`) of `SKIP` if defined and
         configures `DEPENDENCIES`.
         """
 
         if not abstract:
 
             cls.assert_class_var(name="LOOKBACK", type=Window)
+            cls._RETURNS_LOOKBACK, = Alpha._windows_to_returns(cls.LOOKBACK)
+            cls.DEPENDENCIES = {cls._RETURNS_LOOKBACK}
 
             try:
                 cls.assert_class_var(name="SKIP", type=Window)
@@ -47,16 +49,11 @@ class ReturnsBased(Alpha, abstract=True):
                         f"{cls.__name__}.SKIP must be less than "
                         f"{cls.__name__}.LOOKBACK"
                     )
-                cls._RETURNS_LOOKBACK, cls._RETURNS_SKIP = (
-                    Alpha._windows_to_returns(cls.LOOKBACK, cls.SKIP)
-                )
-                cls.DEPENDENCIES = {cls._RETURNS_LOOKBACK, cls._RETURNS_SKIP}
+                cls._RETURNS_SKIP ,= Alpha._windows_to_returns(cls.SKIP)
+                cls.DEPENDENCIES.add(cls._RETURNS_SKIP)
+            
             except AttributeError:
-                cls._RETURNS_LOOKBACK, cls._RETURNS_SKIP = (
-                    *Alpha._windows_to_returns(cls.LOOKBACK),
-                    None,
-                )
-                cls.DEPENDENCIES = {cls._RETURNS_LOOKBACK}
+                cls._RETURNS_SKIP = None
 
         kwargs["abstract"] = abstract
         super().__init_subclass__(**kwargs)

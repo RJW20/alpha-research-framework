@@ -98,6 +98,7 @@ class TestReturnsBasedCompute(RegistryIsolatedTestCase):
         """
 
         rng = np.random.default_rng(0)
+        
         windows_return_pairs: list[tuple[Window, type[features.Returns]]] = [
             (Window.DAY, features.DailyReturns),
             (Window.WEEK, features.WeeklyReturns),
