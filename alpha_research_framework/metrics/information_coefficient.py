@@ -1,36 +1,21 @@
-from typing import Any
-
-import pandas as pd
+from typing import override
 
 import alpha_research_framework.market_data as md
-from alpha_research_framework.metrics.metric import Metric
+from alpha_research_framework.metrics.single_value_metric import (
+    SingleValueMetric,
+)
 from alpha_research_framework.metrics.stats import spearman_rank
 
 
-class InformationCoefficient(Metric):
+class InformationCoefficient(SingleValueMetric):
 
-    ID = "ic"
-
-    @staticmethod
-    def dataframe(
-        index: pd.Index,
-        base_columns: list[tuple[Any,...]],
-        base_column_names: list[str]
-    ) -> pd.DataFrame:
-        columns = pd.MultiIndex.from_tuples(
-            tuples=base_columns,
-            names=base_column_names
-        )
-        return pd.DataFrame(
-            index=index,
-            columns=columns,
-            dtype=float
-        )
-    
-    @staticmethod
-    def compute(signal: md.Array, future_returns: md.Array) -> float:
+    ID = "information_coefficient"
+ 
+    @classmethod
+    @override
+    def compute(cls, signal: md.Array, future_returns: md.Array) -> float:
         """
-        Return the Spearman's rank correlation coefficient between signal and
-        future_returns.
+        Return the Spearman's rank correlation coefficient between `signal` and
+        `future_returns`.
         """
         return spearman_rank(signal, future_returns)
