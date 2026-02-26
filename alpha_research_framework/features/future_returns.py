@@ -48,7 +48,7 @@ class FutureReturns(Feature, ClassVarValidator, abstract=True):
         """`r_t = log(p_{t+horizon}) - log(p_t)`"""
 
         horizon = cls.HORIZON.value
-        log_price = features[LogPrice.ID]
+        log_price = features[LogPrice]
         out[:-horizon] = log_price[horizon:] - log_price[:-horizon]
         out[-horizon:] = np.nan
 

@@ -47,7 +47,7 @@ class Returns(Feature, ClassVarValidator, abstract=True):
         """`r_t = log(p_t) - log(p_{t-lookback})`"""
 
         lookback = cls.LOOKBACK.value
-        log_price = features[LogPrice.ID]
+        log_price = features[LogPrice]
         out[:lookback] = np.nan
         out[lookback:] = log_price[lookback:] - log_price[:-lookback]
 

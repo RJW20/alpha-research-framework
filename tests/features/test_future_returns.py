@@ -54,7 +54,7 @@ class TestFutureReturnsCompute(RegistryIsolatedTestCase):
         ).astype(md.Scalar)
         nan_mask = rng.uniform(size=log_prices.shape) < 0.1
         log_prices[nan_mask] = np.nan
-        features = {LogPrice.ID: log_prices}
+        features: dict[type[Feature], md.Array] = {LogPrice: log_prices}
 
         future_returns_features: list[type[FutureReturns]] = [
             DailyFutureReturns,

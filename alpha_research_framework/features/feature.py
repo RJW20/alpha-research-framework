@@ -111,7 +111,7 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
             try:
                 original(market_data, features, out)
             except KeyError as e:
-                missing_dependency = cls.from_id(e.args[0])
+                missing_dependency = e.args[0]
                 if missing_dependency not in cls.DEPENDENCIES:
                     raise DependencyError(
                         f"Feature {cls.__name__} cannot be computed: to ensure "

@@ -48,7 +48,7 @@ class Volatility(Feature, ClassVarValidator, abstract=True):
         """
 
         lookback = cls.LOOKBACK.value
-        ret_1d = features[DailyReturns.ID]
+        ret_1d = features[DailyReturns]
         cls._rolling_std(ret_1d, lookback, out)
 
 

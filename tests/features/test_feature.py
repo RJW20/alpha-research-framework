@@ -115,21 +115,21 @@ class TestFeatureDependencies(RegistryIsolatedTestCase):
                 out: md.Array,
             ) -> None:
                 # attempt to use non-dependency
-                features[NotDependedOn.ID]
+                features[NotDependedOn]
                 # attempt to use the dependency
-                features[DependedOn.ID]
+                features[DependedOn]
 
         HasCompute._wrap_compute()
 
         with self.assertRaises(DependencyError):
-            HasCompute.compute(None, {DependedOn.ID: None}, None)
+            HasCompute.compute(None, {DependedOn: None}, None)
 
         with self.assertRaises(DependencyError):
-            HasCompute.compute(None, {NotDependedOn.ID: None}, None)
+            HasCompute.compute(None, {NotDependedOn: None}, None)
 
         HasCompute.compute(
             None,
-            {NotDependedOn.ID: None, DependedOn.ID: None},
+            {NotDependedOn: None, DependedOn: None},
             None,
         )
 

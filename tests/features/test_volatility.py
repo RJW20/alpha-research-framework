@@ -55,7 +55,7 @@ class TestVolatilityCompute(RegistryIsolatedTestCase):
         ).astype(md.Scalar)
         nan_mask = rng.uniform(size=returns.shape) < 0.1
         returns[nan_mask] = np.nan
-        features = {DailyReturns.ID: returns}
+        features: dict[type[Feature], md.Array] = {DailyReturns: returns}
 
         volatility_features: list[type[Volatility]] = [
             DailyVolatility,
