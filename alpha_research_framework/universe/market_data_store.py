@@ -9,8 +9,8 @@ class MarketDataStore:
     """
     Disk-backed market data storage.
     
-    price = adjusted close
-    volume = adjusted volume
+    `price` = adjusted close
+    `volume` = adjusted volume
     """
 
     def __init__(self, path: Path, shape: tuple[int, int]) -> None:

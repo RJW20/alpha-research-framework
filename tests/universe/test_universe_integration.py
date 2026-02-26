@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import override
 
 import numpy as np
 
@@ -8,16 +9,20 @@ import alpha_research_framework.market_data as md
 from alpha_research_framework import EquityData, Universe, Window
 from alpha_research_framework.download import Metadata
 from alpha_research_framework.features import (
+    DailyFutureReturns,
     Feature,
     Features,
-    FeatureSpec,
-    FutureReturns,
+    HalfYearlyFutureReturns,
+    MonthlyFutureReturns,
+    QuarterlyFutureReturns,
+    WeeklyFutureReturns,
+    YearlyFutureReturns,
 )
-from tests.dummy_feature import DummyFeature
-from tests.utils import create_download_dir
+from tests.utils import RegistryIsolatedTestCase, create_download_dir
 
 
-class TestUniverse(unittest.TestCase):
+class TestUniverse(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Feature
 
     METADATA: Metadata = {
         "created_at": "N/A",
@@ -51,8 +56,8 @@ class TestUniverse(unittest.TestCase):
 
     def setUp(self) -> None:
         """
-        Create temporary src and path directories and write files to src to make
-        an EquityData instance from.
+        Create temporary `src` and `path` directories and write files to `src`
+        to make an `EquityData` instance from.
         """
 
         self._tmp_dir = TemporaryDirectory()
@@ -111,99 +116,98 @@ class TestUniverse(unittest.TestCase):
         values.
         """
 
-        universe = self._build_universe()
-
-        class FeatureA(DummyFeature):
+        class Ones(Feature):
+            ID = "ones"
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = set()
+            @classmethod
+            @override
             def compute(
-                self,
+                cls,
                 market_data: md.MarketData,
                 features: Features,
                 out: md.Array
             ) -> None:
                 out[:] = np.ones(out.shape)
 
-        class FeatureB(DummyFeature):
-            __a_dependency__ = FeatureSpec(FeatureA)
-            __dependencies__ = {__a_dependency__}
+        class DoubleOnes(Feature):
+            ID = "double_ones"
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = {Ones}
+            @classmethod
+            @override
             def compute(
-                self,
+                cls,
                 market_data: md.MarketData,
                 features: Features,
                 out: md.Array
             ) -> None:
-                out[:] = features[self.__a_dependency__][:] * 2
+                out[:] = features[Ones][:] * 2
 
-        universe.build_features([FeatureSpec(FeatureB)])
+        universe = self._build_universe()
+        universe.build_features([DoubleOnes])
 
-        self.assertTrue((self.path / f"{FeatureA.__name__}.dat").exists())
-        feature_a = self._open_memmap(f"{FeatureA.__name__}", md.Scalar)
+        self.assertTrue((self.path / f"{Ones.ID}.dat").exists())
+        feature_a = self._open_memmap(f"{Ones.ID}", md.Scalar)
         self.assertEqual(feature_a.shape, self.shape)
         np.testing.assert_array_equal(feature_a, np.ones(self.shape))
 
-        self.assertTrue((self.path / f"{FeatureB.__name__}.dat").exists())
-        feature_2 = self._open_memmap(f"{FeatureB.__name__}", md.Scalar)
+        self.assertTrue((self.path / f"{DoubleOnes.ID}.dat").exists())
+        feature_2 = self._open_memmap(f"{DoubleOnes.ID}", md.Scalar)
         self.assertEqual(feature_2.shape, self.shape)
         np.testing.assert_array_equal(feature_2, np.ones(self.shape) * 2)
 
     def test_build_features_duplicate(self) -> None:
         """Verify already built features are not rebuilt."""
 
-        universe = self._build_universe()
         rng = np.random.default_rng(0)
 
-        class RandomNoise(DummyFeature):
+        class RandomNoise(Feature):
+            ID = "random_noise"
+            TAG = Feature.Tag.PREDICTOR
+            DEPENDENCIES = set()
+            @classmethod
+            @override
             def compute(
-                self,
+                cls,
                 market_data: md.MarketData,
                 features: Features,
                 out: md.Array
             ) -> None:
                 out[:] = rng.uniform(0, 10, size=out.shape)
 
-        universe.build_features([FeatureSpec(RandomNoise)])
-        expected = universe._features[FeatureSpec(RandomNoise)]
-        universe.build_features([FeatureSpec(RandomNoise)])
+        universe = self._build_universe()
+        universe.build_features([RandomNoise])
+        expected = universe._features[RandomNoise]
+        universe.build_features([RandomNoise])
 
-        np.testing.assert_array_equal(
-            universe._features[FeatureSpec(RandomNoise)],
-            expected
-        )
+        np.testing.assert_array_equal(universe._features[RandomNoise], expected)
 
     def test_cross_section_market_data(self) -> None:
-        """Verify cross-section includes all market data."""
+        """Verify `cross_section` includes all market data."""
 
         universe = self._build_universe()
         x = universe.cross_section(universe.dates[0])
         self.assertListEqual(list(x.keys()), ["price", "volume"])
 
     def test_cross_section_features(self) -> None:
-        """Verify cross-section includes all predictive features."""
+        """Verify `cross_section` includes all predictive features."""
 
-        universe = self._build_universe()
-
-        class Predictor(DummyFeature):
+        class Predictor(Feature, abstract=True):
+            ID = "predictor"
             TAG = Feature.Tag.PREDICTOR
 
-        class Target(DummyFeature):
+        class Target(Feature, abstract=True):
             TAG = Feature.Tag.TARGET
 
-        universe._features[FeatureSpec(Predictor)] = np.ones(
-            self.shape,
-            dtype=md.Scalar
-        )
-        universe._features[FeatureSpec(Target)] = np.ones(
-            self.shape,
-            dtype=md.Scalar
-        )
-
+        universe = self._build_universe()
+        universe._features[Predictor] = np.ones(self.shape, dtype=md.Scalar)
+        universe._features[Target] = np.ones(self.shape, dtype=md.Scalar)
         x = universe.cross_section(universe.dates[0])
-        self.assertListEqual(
-            list(x.keys()),
-            ["price", "volume", Predictor.__name__]
-        )
+        self.assertListEqual(list(x.keys()), ["price", "volume", Predictor.ID])
 
     def test_cross_section_mask(self) -> None:
-        """Verify cross-section is masked correctly."""
+        """Verify `cross_section` is masked correctly."""
 
         universe = self._build_universe()
 
@@ -212,30 +216,36 @@ class TestUniverse(unittest.TestCase):
             universe._mask[:, :] = np.array(
                 [False] * removed_stocks + [True] * included_stocks
             )
-
             x = universe.cross_section(universe.dates[0])
             self.assertEqual(len(x["price"]), included_stocks)
 
     def test_future_returns_horizons(self) -> None:
-        """Verify future returns includes all horizons."""
+        """Verify `future_returns` includes all horizons."""
 
         universe = self._build_universe()
 
-        for horizon in Window:
-            universe._features[FeatureSpec(FutureReturns, horizon)] = np.ones(
+        for future_returns in [
+            DailyFutureReturns,
+            WeeklyFutureReturns,
+            MonthlyFutureReturns,
+            QuarterlyFutureReturns,
+            HalfYearlyFutureReturns,
+            YearlyFutureReturns,
+        ]:
+            universe._features[future_returns] = np.ones(
                 self.shape,
-                dtype=md.Scalar
+                dtype=md.Scalar,
             )
         
         fut_ret = universe.future_returns(universe.dates[0])
         self.assertListEqual(list(fut_ret.keys()), list(Window))
 
     def test_future_returns_mask(self) -> None:
-        """Verify future returns is masked correctly."""
+        """Verify `future_returns` is masked correctly."""
         
         universe = self._build_universe()
 
-        universe._features[FeatureSpec(FutureReturns, Window.DAY)] = np.ones(
+        universe._features[DailyFutureReturns] = np.ones(
                 self.shape,
                 dtype=md.Scalar
             )
@@ -245,7 +255,6 @@ class TestUniverse(unittest.TestCase):
             universe._mask[:, :] = np.array(
                 [False] * removed_stocks + [True] * included_stocks
             )
-
             fut_ret = universe.future_returns(universe.dates[0])
             self.assertEqual(len(fut_ret[Window.DAY]), included_stocks)
 

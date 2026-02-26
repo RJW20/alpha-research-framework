@@ -1,36 +1,36 @@
 import unittest
 
 from alpha_research_framework import Universe
-from alpha_research_framework.features import FeatureSpec
-from tests.dummy_feature import DummyFeature
+from alpha_research_framework.features import Feature
 
 
-class FeatureA(DummyFeature):
-    pass
+class FeatureA(Feature, abstract=True):
+    DEPENDENCIES = set()
 
+class FeatureB(Feature, abstract=True):
+    DEPENDENCIES = {FeatureA}
 
-class FeatureB(DummyFeature):
-    __dependencies__ = {FeatureSpec(FeatureA)}
-
-
-class FeatureC(DummyFeature):
-    __dependencies__ = {FeatureSpec(FeatureB)}
-
+class FeatureC(Feature, abstract=True):
+    DEPENDENCIES = {FeatureB}
 
 class TestUniverseFeatureDependencies(unittest.TestCase):
 
-    def setUp(self) -> None:
-        self.a = FeatureSpec(FeatureA)
-        self.b = FeatureSpec(FeatureB)
-        self.c = FeatureSpec(FeatureC)
-        
     def test_expand_dependencies_transitive(self) -> None:
-        expanded = Universe._expand_dependencies([self.c])
-        self.assertEqual(expanded, {self.a, self.b, self.c})
+        """Verify `_expand_dependencies` is transitive."""
+
+        expanded = Universe._expand_dependencies([FeatureC])
+        self.assertSetEqual(expanded, {FeatureA, FeatureB, FeatureC})
 
     def test_order_dependencies(self) -> None:
-        ordered = list(Universe._order_dependencies({self.b, self.c, self.a}))
-        self.assertEqual(ordered, [self.a, self.b, self.c])
+        """
+        Verify `_order_dependencies` returns a feature's dependencies before
+        itself.
+        """
+
+        ordered = list(
+            Universe._order_dependencies([FeatureB, FeatureC, FeatureA])
+        )
+        self.assertListEqual(ordered, [FeatureA, FeatureB, FeatureC])
 
 
 if __name__ == "__main__":

@@ -8,12 +8,7 @@ import pandas as pd
 
 import alpha_research_framework.market_data as md
 from alpha_research_framework.equity_data import EquityData
-from alpha_research_framework.features import (
-    Feature,
-    Features,
-    FeatureSpec,
-    FutureReturns,
-)
+from alpha_research_framework.features import Feature, Features, FutureReturns
 from alpha_research_framework.universe.calendar import Calendar
 from alpha_research_framework.universe.cross_section import CrossSection
 from alpha_research_framework.universe.market_data_store import MarketDataStore
@@ -41,7 +36,7 @@ class Universe:
         """
         Initialise the universe and create all required memmapped arrays.
 
-        Loads per-stock data from equity_data, constructs a global trading
+        Loads per-stock data from `equity_data`, constructs a global trading
         calendar, writes time * stock arrays to disk, and computes the in-
         universe mask using existence, liquidity, and market cap filters.
         """
@@ -53,11 +48,11 @@ class Universe:
         self.shape = (self._calendar.T, len(equity_data.tickers))
         self._market_data, self._mask = self._allocate_storage(path, self.shape)
         for col, ticker in enumerate(equity_data.tickers):
-            info, df = equity_data.load_stock(ticker)
-            self._market_data[:, col] = self._compute_market_data(df)
+            info, data = equity_data.load_stock(ticker)
+            self._market_data[:, col] = self._compute_market_data(data)
             shares = info["shares_outstanding"]
             self._mask[:, col] = self._compute_mask(
-                df,
+                data,
                 shares,
                 liquidity_threshold,
                 mcap_threshold,
@@ -72,7 +67,7 @@ class Universe:
         """Return all dates with valid market data."""
         return self._calendar.index
 
-    def build_features(self, features: Iterable[FeatureSpec]) -> None:
+    def build_features(self, features: Iterable[type[Feature]]) -> None:
         """
         Build the requested features for every timestamp and stock.
         
@@ -87,10 +82,10 @@ class Universe:
         
         for feature in ordered_features:
             values = np.memmap(
-                self.path / f"{feature.name}.dat",
+                self.path / f"{feature.ID}.dat",
                 dtype=md.Scalar,
                 mode="w+",
-                shape=self.shape
+                shape=self.shape,
             )
             feature.compute(self._market_data, self._features, values)
             values.flush()
@@ -98,8 +93,8 @@ class Universe:
         
     def cross_section(self, date: pd.Timestamp) -> CrossSection:
         """
-        Return a CrossSection containing market data and predictive features for
-        all stocks in-universe at the given date.
+        Return a `CrossSection` containing market data and predictive features
+        for all stocks in-universe at the given `date`.
         """
 
         t = self._calendar.t(date)
@@ -111,24 +106,24 @@ class Universe:
             }
             |
             {
-                feature.name: values[t, mask]
+                feature.ID: values[t, mask]
                 for feature, values in self._features.items()
-                if feature.tag == Feature.Tag.PREDICTOR
+                if feature.TAG == Feature.Tag.PREDICTOR
             }
         )
     
     def future_returns(self, date: pd.Timestamp) -> dict[Window, md.Array]:
         """
-        Return a dictionary mapping horizon to future returns over that horizon
-        for all stocks in-universe at the given date.
+        Return a `dictionary` mapping horizon to future returns over that
+        horizon for all stocks in-universe at the given `date`.
         """
 
         t = self._calendar.t(date)
         mask = self._mask[t, :]
         return {
-            feature.windows[0]: values[t, mask]
+            feature.HORIZON: values[t, mask]
             for feature, values in self._features.items()
-            if feature.cls == FutureReturns
+            if issubclass(feature, FutureReturns)
         }
 
     # Private helpers
@@ -153,21 +148,30 @@ class Universe:
         return market_data, mask
     
     @staticmethod
-    def _compute_market_data(df: pd.DataFrame) -> tuple[np.ndarray,...]:
-        price = df["adj_close"].to_numpy(dtype=md.Scalar)
-        volume = (df["volume"] / df["adj_factor"]).to_numpy(dtype=md.Scalar)
+    def _compute_market_data(stock_data: pd.DataFrame) -> tuple[np.ndarray,...]:
+        """Return `NumPy` arrays for `price` and `volume`."""
+
+        price = stock_data["adj_close"].to_numpy(dtype=md.Scalar)
+        volume = (
+            stock_data["volume"] / stock_data["adj_factor"]
+        ).to_numpy(dtype=md.Scalar)
         return price, volume
 
     @staticmethod
     def _compute_mask(
-        df: pd.DataFrame,
+        stock_data: pd.DataFrame,
         shares: int,
         liquidity_threshold: float,
         mcap_threshold: float,
         lookback: Window
     ) -> np.ndarray:
+        """
+        Return a mask describing when the stock with given `stock_data` meets
+        the existence (non NaN `adj_close` sometime over `lookback`), liquidity
+        and market cap requirements.
+        """
 
-        exists = ~df["adj_close"].isna()
+        exists = ~stock_data["adj_close"].isna()
         rolling_exists = (
             exists
             .rolling(lookback.value, min_periods=1)
@@ -175,7 +179,7 @@ class Universe:
             .astype(bool)
         )
 
-        dollar_vol = df["adj_close"] * df["volume"]
+        dollar_vol = stock_data["adj_close"] * stock_data["volume"]
         liquidity_mask = (
             dollar_vol
             .rolling(lookback.value, min_periods=1)
@@ -184,7 +188,7 @@ class Universe:
         )
 
         rolling_adj_close = (
-            df["adj_close"]
+            stock_data["adj_close"]
             .rolling(lookback.value, min_periods=1)
             .mean()
         )
@@ -202,21 +206,31 @@ class Universe:
 
     @staticmethod
     def _expand_dependencies(
-        features: Iterable[FeatureSpec]
-    ) -> set[FeatureSpec]:
-        expanded: set[FeatureSpec] = set()
+        features: Iterable[type[Feature]]
+    ) -> set[type[Feature]]:
+        """
+        Return a set containing all given `features` along with their
+        dependencies and their dependencies' dependencies etc.
+        """
+
+        expanded: set[type[Feature]] = set()
         to_expand = set(features)
         while to_expand:
             feature = to_expand.pop()
             if feature not in expanded:
                 expanded.add(feature)
-                to_expand |= feature.dependencies
+                to_expand |= feature.DEPENDENCIES
         return expanded
     
     @staticmethod
     def _order_dependencies(
-        features: Iterable[FeatureSpec]
-    ) -> Iterable[FeatureSpec]:
-        features_and_dependencies = {f: f.dependencies for f in features}
+        features: Iterable[type[Feature]]
+    ) -> Iterable[type[Feature]]:
+        """
+        Return an iteratable containing all given `features` in an order such
+        that any feature's dependencies come before it.
+        """
+
+        features_and_dependencies = {f: f.DEPENDENCIES for f in features}
         ts = TopologicalSorter(features_and_dependencies)
         return ts.static_order()
