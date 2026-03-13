@@ -136,14 +136,48 @@ class TestFeatureDependencies(RegistryIsolatedTestCase):
 
 class TestFeatureCalculations(unittest.TestCase):
 
-    def test_rolling_std(self) -> None:
+    T = 5000
+    N = 500
+
+    def test_rolling_average(self) -> None:
         """
-        Verify `_rolling_std` calculation is same as `pandas` built in
+        Verify `_rolling_average` calculation is same as `pandas` built-in
         `DataFrame` version.
         """
 
         rng = np.random.default_rng(0)
-        x = rng.uniform(0, 10, (10000, 10)).astype(md.Scalar)
+        x = rng.uniform(
+            0,
+            10,
+            (TestFeatureCalculations.T, TestFeatureCalculations.N),
+        ).astype(md.Scalar)
+        nan_mask = rng.uniform(size=x.shape) < 0.1
+        x[nan_mask] = np.nan
+
+        for lookback in [1, 10, 100, 1000]:
+
+            out = np.empty_like(x, dtype=md.Scalar)
+            Feature._rolling_average(x, lookback, out)
+            expected = (
+                pd.DataFrame(x)
+                .rolling(lookback, min_periods=1)
+                .mean()
+                .to_numpy(dtype=md.Scalar)
+            )
+            np.testing.assert_array_almost_equal(out, expected)
+
+    def test_rolling_std(self) -> None:
+        """
+        Verify `_rolling_std` calculation is same as `pandas` built-in
+        `DataFrame` version.
+        """
+
+        rng = np.random.default_rng(0)
+        x = rng.uniform(
+            0,
+            10,
+            (TestFeatureCalculations.T, TestFeatureCalculations.N),
+        ).astype(md.Scalar)
         nan_mask = rng.uniform(size=x.shape) < 0.1
         x[nan_mask] = np.nan
 

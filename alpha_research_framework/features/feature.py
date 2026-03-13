@@ -127,7 +127,72 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
 
     @staticmethod
     @njit
-    def _rolling_std(values: md.Array,  lookback: int, out: md.Array) -> None:
+    def _rolling_average(
+        values: md.Array,
+        lookback: int,
+        out: md.Array,
+    ) -> None:
+        """
+        Populate `out` with the rolling average of `values` over the `lookback`
+        period.
+
+        Implemented with memory-efficient streaming.
+        Optimised for Numba.
+        """
+
+        T, N = values.shape
+        s = np.zeros(N, dtype=np.float64)
+        obs = np.zeros(N, dtype=np.int64)
+
+        # Account for lookback larger than T
+        if lookback > T:
+            windows_lt_lookback = T
+        else:
+            windows_lt_lookback = lookback
+
+        # First windows < lookback
+        for t in range(windows_lt_lookback):
+
+            vt = values[t]
+            for j in range(N):
+                
+                v = vt[j]
+                if not np.isnan(v):
+                    s[j] += v
+                    obs[j] += 1
+
+                n = obs[j]
+                if n:
+                    out[t, j] = s[j] / n
+                else:
+                    out[t, j] = np.nan
+
+        # Rolling updates
+        for t in range(windows_lt_lookback, T):
+
+            vt_old = values[t - lookback]
+            vt_new = values[t]
+            for j in range(N):
+
+                v_old = vt_old[j]
+                if not np.isnan(v_old):
+                    s[j] -= v_old
+                    obs[j] -= 1
+
+                v_new = vt_new[j]
+                if not np.isnan(v_new):
+                    s[j] += v_new
+                    obs[j] += 1
+
+                n = obs[j]
+                if n:
+                    out[t, j] = s[j] / n
+                else:
+                    out[t, j] = np.nan
+
+    @staticmethod
+    @njit
+    def _rolling_std(values: md.Array, lookback: int, out: md.Array) -> None:
         """
         Populate `out` with the rolling standard deviation of `values` over the
         `lookback` period.
@@ -168,9 +233,9 @@ class Feature(Operator, ClassVarValidator, registry_root=True, abstract=True):
 
         # Rolling updates
         for t in range(windows_lt_lookback, T):
+
             vt_old = values[t - lookback]
             vt_new = values[t]
-
             for j in range(N):
 
                 v_old = vt_old[j]
