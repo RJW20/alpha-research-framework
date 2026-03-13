@@ -20,9 +20,48 @@ class Universe:
     Cross-sectional universe backed by memory-mapped arrays.
 
     Holds a fixed set of tickers, a global calendar, time * stock market data
-    (e.g. prices, volumes) and a time-varying in-universe mask.
-    The universe is constructed once from on-disk data and is read-only
-    thereafter.
+    (e.g. prices, volumes) and a time-varying in-universe mask. Constructed once
+    from on-disk data and read-only thereafter.
+
+    Parameters
+    ----------
+    path : Path
+        Directory to store memory-mapped arrays of both raw market data and any
+        future computed features.
+    equity_data : EquityData
+        `EquityData` instance providing controlled access to per-ticket market
+        data, optionally sector/industry filtered.
+    liquidity_threshold: float
+        Required average liquidity (over `lookback`) for a stock to be
+        considered in-universe on a given date.
+    mcap_threshold : float
+        Required average market cap (over `lookback`) for a stock to be
+        considered in-universe on a given date.
+    lookback : Window, default Window.MONTH
+        Size of lookback window used in calculation of in-universe mask.
+
+    Attributes
+    ----------
+    path : Path
+        Directory containing memory-mapped arrays of both raw market data and
+        any computed features.
+    shape : tuple[int]
+        `(T, N)` where `T` is the number of trading days with data and `N` is
+        number of stocks with data.
+    dates : pd.Index
+        Listing of all dates with market data.
+
+    Methods
+    -------
+    - `build_features(Iterable[Feature])`
+    - `cross_section(pd.TimeStamp)`
+    - `future_returns(pd.TImeStamp)`
+
+    Raises
+    ------
+    ValueError
+        If the underlying disk files backing `equity_data` are not consistent
+        with its metadata (if they weren't created purely by `download`).
     """
 
     def __init__(
@@ -64,7 +103,7 @@ class Universe:
 
     @property
     def dates(self) -> pd.Index:
-        """Return all dates with valid market data."""
+        """Return all dates with market data."""
         return self._calendar.index
 
     def build_features(self, features: Iterable[type[Feature]]) -> None:

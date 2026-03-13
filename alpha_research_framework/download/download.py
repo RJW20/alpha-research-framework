@@ -30,12 +30,50 @@ def download(
     years: int
 ) -> None:
     """
-    Download per-stock daily data and static metadata.
+    Download per-stock daily data and create static metadata.
 
-    Writes:
-      - dest/stocks/{ticker}.parquet
-      - dest/metadata.json
-      - dest/download_log.json
+    Parameters
+    ----------
+    dest : Path
+        Directory to write all downloaded/created files to.
+    tickers : Iterable[str]
+        Listing of all tickers to download stock data for.
+    start_date : str (yyyy-mm-dd)
+        First date to retrieve stock data.
+    years : int
+        Number of years to download daily stock data over.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    pd.ParserError
+        When parsing a date from `start_date` fails.
+    ValueError
+        If a duration of `years` from `start_date` exceeds the current date.
+
+    Side Effects
+    ------------
+    Writes the following files to `dest`:
+
+    stocks/{ticker}.parquet : pd.DataFrame \\
+        Serialised DataFrame per requested ticker indexed by date containing raw
+        OHL(a)CV data for every date the ticker has data for.
+    
+    metadata.json : Metadata \\
+        Serialised typed dictionary containing global static metadata for all
+        stocks along with a list of all stocks and their own static metadata.
+    
+    download_log.json : dict[str, str] \\
+        Serialised dictionary containing the outcome per requested ticker.
+        The possibilities are:
+        - "success": data successfully retrieved.
+        - "no_data": if stock ticker is unrecognised or has no data over
+        requested period.
+        - "error: {error_name}": an error occurred during retrieval of requested
+        ticker's data.
     """
 
     # Calculate end date

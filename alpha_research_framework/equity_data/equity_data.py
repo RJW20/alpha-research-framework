@@ -23,8 +23,42 @@ class EquityData:
     Container providing validated, read-only access to equity metadata and
     raw per-ticker market data stored on disk.
 
-    Instances represent a filtered view of the full dataset. If sector and/or
-    industry are provided, only matching tickers are exposed.
+    Instances represent a filtered view of the full dataset. If `sector` and/or
+    `industry` are provided, only matching tickers are exposed.
+
+    Parameters
+    ----------
+    src : Path
+        Directory containing equity metadata and per-ticker market data, ideally
+        created by `download`.
+    sector : Sector, optional
+        Sector to exclusively expose stocks from.
+    industry : Industry, optional
+        Industry to exclusively expose stocks from (must belong to `sector`,
+        cannot be specified if `sector` isn't).
+
+    Attributes
+    ----------
+    dates : pd.Index
+        Listing of all dates with market data.
+    tickers : set[str]
+        Listing of all stock tickers with market data.
+
+    Methods
+    -------
+    - `load_stock(str)`
+
+    Raises
+    ------
+    ValueError
+        If `sector` is invalid, `industry` does not belong to `sector` or
+        `industry` is specified but `sector` is not.
+    FileNotFoundError
+        If a ticker listed in the metadata within `src` doesn't have a raw stock
+        file (if `src` wasn't created purely by `download`).
+    ValueError
+        If a requested stock ticker to load is not contained within this
+        `EquityData` instance.
     """
 
     def __init__(
@@ -33,7 +67,7 @@ class EquityData:
         sector: Sector | None = None,
         industry: Industry | None = None
     ) -> None:
-        """Load the metadata and validate the sector and industry."""
+        """Load the metadata and validate `sector` and `industry`."""
 
         self._src = src
         self._metadata = self._load_metadata(src)
@@ -49,7 +83,7 @@ class EquityData:
 
     @cached_property
     def dates(self) -> pd.Index:
-        """Return an index containing all dates with valid market data."""
+        """Return an index containing all dates with market data."""
 
         nyse = mcal.get_calendar('NYSE')
         start_date = self._metadata["start_date"]
@@ -59,7 +93,10 @@ class EquityData:
     
     @property
     def tickers(self) -> set[str]:
-        """Return a set containing all the tickers stored in the EquityData."""
+        """
+        Return a set containing all the tickers stored in this `EquityData`
+        instance.
+        """
         return self._tickers
 
     def load_stock(self, ticker: str) -> tuple[StockInfo, pd.DataFrame]:
@@ -80,8 +117,8 @@ class EquityData:
     @staticmethod
     def _load_metadata(src: Path) -> Metadata:
         """
-        Return a dictionary containing metadata about the stocks contained in
-        src.
+        Return a `dictionary` containing metadata about the stocks contained in
+        `src`.
         """
         with (metadata_path(src)).open() as f:
             return json.load(f)
@@ -89,8 +126,8 @@ class EquityData:
     @staticmethod
     def _validate(sector: Sector | None, industry: Industry | None) -> None:
         """
-        Raise a ValueError if sector is invalid or industry does not lie within
-        sector.
+        Raise a `ValueError` if `sector` is invalid or `industry` does not lie
+        within `sector`.
         """
 
         if sector is not None:
@@ -117,10 +154,11 @@ class EquityData:
         industry: Industry | None
     ) -> set[str]:
         """
-        Return a set containing all tickers that match the sector and industry.
+        Return a `set` containing all tickers that match the `sector` and
+        `industry`.
 
-        If the sector is None all tickers will be included.
-        Otherwise if the industry is None all tickers from the sector will be
+        If `sector` is `None` all tickers will be included.
+        Otherwise if `industry` is `None` all tickers from the `sector` will be
         included.
         """
 
@@ -138,7 +176,7 @@ class EquityData:
             
     def _assert_all_tickers_exist(self) -> None:
         """
-        Raise a FileNotFoundError if a ticker doesn't have a raw stock file.
+        Raise a `FileNotFoundError` if a ticker doesn't have a raw stock file.
         """
 
         for ticker in self._tickers:
@@ -150,7 +188,7 @@ class EquityData:
                 )
 
     def _assert_contains(self, ticker: str) -> None:
-        """Raise a ValueError if ticker is not in self.tickers."""
+        """Raise a `ValueError` if ticker is not in `self.tickers`."""
 
         if ticker not in self._tickers:
             if self._sector is not None:
