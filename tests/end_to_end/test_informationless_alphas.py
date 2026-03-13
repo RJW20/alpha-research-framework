@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import override
 
 import numpy as np
 
@@ -12,12 +13,16 @@ from alpha_research_framework import (
     Window,
     evaluate,
 )
-from alpha_research_framework.features import FeatureSpec
 from alpha_research_framework.universe import CrossSection
-from tests.utils import require_e2e_data_dir, set_e2e_data_dir
-    
+from tests.utils import (
+    RegistryIsolatedTestCase,
+    require_e2e_data_dir,
+    set_e2e_data_dir,
+)
 
-class TestInformationLessAlphas(unittest.TestCase):
+
+class TestInformationLessAlphas(RegistryIsolatedTestCase):
+    REGISTRY_OWNER = Alpha
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -26,12 +31,7 @@ class TestInformationLessAlphas(unittest.TestCase):
         data_path = require_e2e_data_dir()
         equity_data = EquityData(data_path)
         cls.tmp_dir = TemporaryDirectory()
-        cls.universe = Universe(
-            Path(cls.tmp_dir.name),
-            equity_data,
-            0,
-            0
-        )
+        cls.universe = Universe(Path(cls.tmp_dir.name), equity_data, 0, 0)
 
     def test_random_noise(self) -> None:
         """Verify IC for random signal is ~0 to 2 decimal places."""
@@ -43,27 +43,26 @@ class TestInformationLessAlphas(unittest.TestCase):
 
             __rng__ = np.random.default_rng(0)
 
-            NAME = "random_noise"
+            ID = "random_noise"
             CATEGORY = "testing"
+            DEPENDENCIES = set()
             HORIZONS = set(Window)
 
-            def compute(self, x: CrossSection) -> md.Array:
-                """a_t ~ N[0,1]"""
-                return self.__rng__.normal(
-                    0,
-                    1,
+            @classmethod
+            @override
+            def compute(cls, x: CrossSection) -> md.Array:
+                """`a_t ~ N[0,1]`"""
+                return cls.__rng__.standard_normal(
                     size=x["price"].shape
                 ).astype(md.Scalar)
-            
-            def _init_dependencies(self) -> set[FeatureSpec]:
-                return set()
-            
-        ic_df = evaluate(self.universe, [RandomNoise()])
+
+        result = evaluate(self.universe, [RandomNoise])
+        ic_df = result["information_coefficient"]
         ic_mean = ic_df.mean()
         np.testing.assert_array_almost_equal(
             ic_mean.to_numpy(),
             np.zeros(shape=ic_mean.shape),
-            decimal=2
+            decimal=2,
         )
 
     def test_constant(self) -> None:
@@ -72,24 +71,24 @@ class TestInformationLessAlphas(unittest.TestCase):
         class Constant(Alpha):
             """Alpha that gives a signal of 1 for every stock."""
 
-            NAME = "constant"
+            ID = "constant"
             CATEGORY = "testing"
+            DEPENDENCIES = set()
             HORIZONS = set(Window)
 
-            def compute(self, x: CrossSection) -> md.Array:
-                """a_t = 1"""
+            @classmethod
+            @override
+            def compute(cls, x: CrossSection) -> md.Array:
+                """`a_t = 1`"""
                 return np.ones_like(x["price"], dtype=md.Scalar)
 
-            def _init_dependencies(self) -> set[FeatureSpec]:
-                return set()
-            
-        ic_df = evaluate(self.universe, [Constant()])
+        ic_df = evaluate(self.universe, [Constant])["information_coefficient"]
         ic_mean = ic_df.mean()
         np.testing.assert_array_almost_equal(
             ic_mean.to_numpy(),
-            np.full_like(ic_mean, np.nan)
+            np.full_like(ic_mean, np.nan),
         )
-        
+
     @classmethod
     def tearDownClass(cls) -> None:
         cls.universe = None
