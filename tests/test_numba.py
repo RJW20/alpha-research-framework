@@ -6,7 +6,9 @@ from typing import Any, Callable
 import numpy as np
 import numpy.typing as npt
 
+import alpha_research_framework.market_data as md
 import alpha_research_framework.metrics.stats as stats
+from alpha_research_framework.features import Feature
 
 
 class TestNumba(unittest.TestCase):
@@ -16,6 +18,7 @@ class TestNumba(unittest.TestCase):
     """
 
     RUNS_PER_FUNC = 100
+    T = 5000
     N = 500
     Q = 10
 
@@ -55,6 +58,81 @@ class TestNumba(unittest.TestCase):
         n = TestNumba.RUNS_PER_FUNC
         return timeit.timeit(func, number=n) / n
     
+    def test_rolling_average(self) -> None:
+
+        def plain_rolling_average(
+            values: md.Array,
+            lookback: int,
+            out: md.Array,
+        ) -> None:
+            
+            values_clean = np.nan_to_num(values, nan=0.0)
+            csum = np.cumsum(values_clean, axis=0)
+            rolling_sum = np.empty_like(csum)
+            rolling_sum[:lookback] = csum[:lookback]
+            rolling_sum[lookback:] = csum[lookback:] - csum[:-lookback]
+
+            valid = ~np.isnan(values)
+            ccount = np.cumsum(valid, axis=0)
+            rolling_count = np.empty_like(ccount)
+            rolling_count[:lookback] = ccount[:lookback]
+            rolling_count[lookback:] = ccount[lookback:] - ccount[:-lookback]
+
+            out[:] = rolling_sum / rolling_count
+
+        rng = np.random.default_rng(0)
+        x = rng.uniform(0, 10, (TestNumba.T, TestNumba.N)).astype(md.Scalar)
+        lookback = 20
+        out = np.empty_like(x, dtype=md.Scalar)
+        self._assert_numba_faster(
+            Feature._rolling_average,
+            plain_rolling_average,
+            x,
+            lookback,
+            out,
+        )
+
+    def test_rolling_std(self) -> None:
+
+        def plain_rolling_std(
+            values: md.Array,
+            lookback: int,
+            out: md.Array,
+        ) -> None:
+            
+            values_clean = np.nan_to_num(values, nan=0.0)
+
+            csum = np.cumsum(values_clean, axis=0)
+            rolling_sum = np.empty_like(csum, dtype=np.float64)
+            rolling_sum[:lookback] = csum[:lookback]
+            rolling_sum[lookback:] = csum[lookback:] - csum[:-lookback]
+
+            csum2 = np.cumsum(np.square(values_clean), axis=0)
+            rolling_sum2 = np.empty_like(csum2, dtype=np.float64)
+            rolling_sum2[:lookback] = csum2[:lookback]
+            rolling_sum2[lookback:] = csum2[lookback:] - csum2[:-lookback]
+
+            valid = ~np.isnan(values)
+            ccount = np.cumsum(valid, axis=0)
+            rolling_count = np.empty_like(ccount, dtype=int)
+            rolling_count[:lookback] = ccount[:lookback]
+            rolling_count[lookback:] = ccount[lookback:] - ccount[:-lookback]
+
+            out[:] = np.sqrt((rolling_sum2 - np.square(rolling_sum) / rolling_count) / (rolling_count - 1))
+            out[rolling_count < 2] = np.nan
+
+        rng = np.random.default_rng(0)
+        x = rng.uniform(0, 10, (TestNumba.T, TestNumba.N)).astype(md.Scalar)
+        lookback = 20
+        out = np.empty_like(x, dtype=md.Scalar)
+        self._assert_numba_faster(
+            Feature._rolling_std,
+            plain_rolling_std,
+            x,
+            lookback,
+            out,
+        )
+
     def test_pearson_scalar(self) -> None:
             
         def plain_pearson_scalar(x: np.ndarray, y: np.ndarray) -> float:
@@ -67,13 +145,13 @@ class TestNumba(unittest.TestCase):
                 return np.nan
             
         rng = np.random.default_rng(0)
-        x = rng.uniform(0, self.N, self.N)
-        y = rng.uniform(0, self.N, self.N)
+        x = rng.uniform(0, TestNumba.N, TestNumba.N)
+        y = rng.uniform(0, TestNumba.N, TestNumba.N)
         self._assert_numba_faster(
             stats.pearson_scalar,
             plain_pearson_scalar,
             x,
-            y
+            y,
         )
 
     def test_quantile_indices(self) -> None:
@@ -96,7 +174,7 @@ class TestNumba(unittest.TestCase):
             stats.quantile_indices,
             plain_quantile_indices,
             x,
-            TestNumba.Q
+            TestNumba.Q,
         )
         
     def test_bucket_averages(self) -> None:
@@ -127,7 +205,7 @@ class TestNumba(unittest.TestCase):
             plain_bucket_averages,
             bucket_idx,
             x,
-            TestNumba.Q
+            TestNumba.Q,
         )
 
 
