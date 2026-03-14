@@ -45,13 +45,13 @@ class TestAlphaDependencies(RegistryIsolatedTestCase):
         with self.assertRaises(TypeError):
             class IncompatibleDependenciesContainer(Alpha):
                 ID = "incompatible_dependencies_container"
-                CATEGORY = "test_dependencies"
+                CATEGORY = "testing_dependencies"
                 DEPENDENCIES = list()
 
         with self.assertRaises(TypeError):
             class IncompatibleDependenciesElement(Alpha):
                 ID = "incompatible_dependencies_element"
-                CATEGORY = "test_dependencies"
+                CATEGORY = "testing_dependencies"
                 DEPENDENCIES = {1}
 
     def test_future_returns(self) -> None:

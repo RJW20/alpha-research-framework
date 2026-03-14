@@ -3,6 +3,7 @@ from typing import Any, ClassVar
 
 import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
+from alpha_research_framework.alphas.alpha.alpha_meta import AlphaMeta
 from alpha_research_framework.class_var_validator import ClassVarValidator
 from alpha_research_framework.features.dependency_error import DependencyError
 from alpha_research_framework.operator import Operator
@@ -10,7 +11,13 @@ from alpha_research_framework.universe import CrossSection
 from alpha_research_framework.window import Window
 
 
-class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
+class Alpha(
+    Operator,
+    ClassVarValidator,
+    metaclass=AlphaMeta,
+    registry_root=True,
+    abstract=True,
+):
     """
     Abstract base class for cross-sectional alphas with automatic subclass
     validation and runtime missing dependency error reporting.
@@ -24,6 +31,11 @@ class Alpha(Operator, ClassVarValidator, registry_root=True, abstract=True):
     be evaluated against
     - `compute(cls, x: CrossSection) -> md.Array:` - classmethod for calculating
     the alpha
+
+    New abstract subclasses can be created by composing two already existing
+    concrete subclasses via the operators `+`, `-`, `*`, `/`. The new subclass
+    will have `DEPENDENCIES` defined as the union of that of the bases, and
+    `compute` as the relevant composition of the bases' `compute`.
     """
 
     CATEGORY: ClassVar[str]
