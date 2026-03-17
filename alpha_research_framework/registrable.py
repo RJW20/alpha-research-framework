@@ -6,13 +6,14 @@ from typing import Any, ClassVar
 from alpha_research_framework.class_var_validator import ClassVarValidator
 
 
-class Operator(ClassVarValidator, ABC):
+class Registrable(ClassVarValidator, ABC):
     """
-    Abstract base class for registry-aware operators.
+    Abstract base class for subclasses wishing to maintain a registry of their
+    concrete subclasses.
 
     Responsibilities:
-    - Enforce that concrete subclasses define a unique string `ID`.
     - Maintain a per-registry-root-class `__registry__` of concrete subclasses.
+    - Enforce that concrete subclasses define a unique string `ID`.
     - Provide a classmethod `from_id` for lookup.
 
     When subclassing:
@@ -23,16 +24,10 @@ class Operator(ClassVarValidator, ABC):
     """
 
     # Only meaningful for registry roots
-    __registry__: ClassVar[dict[str, type[Operator]]]
+    __registry__: ClassVar[dict[str, type[Registrable]]]
 
     # Each concrete subclass must define a unique string ID
     ID: ClassVar[str]
-
-    def __init__(self) -> None:
-        raise TypeError(
-            f"{self.__class__.__name__} is a stateless operator and cannot be "
-            "instantiated"
-        )
 
     def __init_subclass__(
         cls,
@@ -64,8 +59,8 @@ class Operator(ClassVarValidator, ABC):
         ]
         if not root_registries:
             raise TypeError(
-                f"{cls.__name__} is concrete but does not have a registry. "
-                "Ensure a registry root exists in the inheritance chain."
+                f"{cls.__name__} is concrete but does not have a registry - "
+                "ensure a registry root exists in the inheritance chain"
             )
         for base, registry in root_registries:
             if cls.ID in registry:
@@ -76,8 +71,8 @@ class Operator(ClassVarValidator, ABC):
             registry[cls.ID] = cls
 
     @classmethod
-    def from_id(cls, id: str) -> type[Operator]:
-        """Return the operator with `ID = id`."""
+    def from_id(cls, id: str) -> type[Registrable]:
+        """Return the concrete subclass with `ID = id`."""
         if id not in cls.__registry__:
             raise ValueError(
                 f"ID '{id}' not found in registry for {cls.__name__}"

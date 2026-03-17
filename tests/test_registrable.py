@@ -1,17 +1,9 @@
 import unittest
 
-from alpha_research_framework.operator import Operator
+from alpha_research_framework.registrable import Registrable
 
 
-class TestOperatorInstantiation(unittest.TestCase):
-
-    def test_instantiation(self) -> None:
-        """Verify an Operator cannot be instantiated."""
-
-        with self.assertRaises(TypeError):
-            op = Operator()
-
-class TestOperatorId(unittest.TestCase):
+class TestRegistrableId(unittest.TestCase):
 
     def test_class_var_assertion(self) -> None:
         """
@@ -19,51 +11,51 @@ class TestOperatorId(unittest.TestCase):
         """
 
         with self.assertRaises(AttributeError):
-            class NoId(Operator):
+            class NoId(Registrable):
                 pass
 
         with self.assertRaises(TypeError):
-            class IncompatibleId(Operator):
+            class IncompatibleId(Registrable):
                 ID = 1
 
         with self.assertRaises(ValueError):
-            class BadId(Operator):
+            class BadId(Registrable):
                 ID = ""
 
     def test_duplicate(self) -> None:
-        """Verify 2 operators with the same root cannot share `ID`."""
+        """Verify 2 registrables with the same root cannot share `ID`."""
 
-        class Root(Operator, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True, abstract=True):
             pass
 
-        class Operator1(Root):
-            ID = "op"
+        class Registrable1(Root):
+            ID = "reg"
 
         with self.assertRaises(ValueError):
-            class Operator2(Root):
-                ID = "op"
+            class Registrable2(Root):
+                ID = "reg"
 
     def test_from_id(self) -> None:
-        """Verify operator returned by `id` matches."""
+        """Verify `Registrable` returned by `id` matches."""
 
-        class Root(Operator, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True, abstract=True):
             pass
 
-        class DummyOperator(Root):
-            ID = "dummy_op"
-        self.assertIs(Root.from_id("dummy_op"), DummyOperator)
+        class DummyRegistrable(Root):
+            ID = "dummy_reg"
+        self.assertIs(Root.from_id("dummy_reg"), DummyRegistrable)
 
     def test_from_invalid_id(self) -> None:
         """Verify an error is raised when `id` is fictional."""
 
-        class Root(Operator, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True, abstract=True):
             pass
 
         with self.assertRaises(ValueError):
             Root.from_id("abc")
 
 
-class TestOperatorRegistryRoot(unittest.TestCase):
+class TestRegistrableRegistryRoot(unittest.TestCase):
 
     def test_mutually_exclusive_roots(self) -> None:
         """
@@ -71,10 +63,10 @@ class TestOperatorRegistryRoot(unittest.TestCase):
         root.
         """
 
-        class Root1(Operator, registry_root=True, abstract=True):
+        class Root1(Registrable, registry_root=True, abstract=True):
             pass
 
-        class Root2(Operator, registry_root=True, abstract=True):
+        class Root2(Registrable, registry_root=True, abstract=True):
             pass
 
         class SubClassOfRoot1(Root1):
@@ -90,7 +82,7 @@ class TestOperatorRegistryRoot(unittest.TestCase):
         """
 
         with self.assertRaises(AttributeError):
-            class RootlessSubClass(Operator):
+            class RootlessSubClass(Registrable):
                 pass
 
     def test_multiple_roots_in_inheritance_chain(self) -> None:
@@ -99,10 +91,10 @@ class TestOperatorRegistryRoot(unittest.TestCase):
         registered in both.
         """
 
-        class Root1(Operator, registry_root=True, abstract=True):
+        class Root1(Registrable, registry_root=True, abstract=True):
             pass
 
-        class Root2(Operator, registry_root=True, abstract=True):
+        class Root2(Registrable, registry_root=True, abstract=True):
             pass
 
         class SubClassOfRoot1And2(Root1, Root2):
@@ -117,7 +109,7 @@ class TestOperatorRegistryRoot(unittest.TestCase):
         registered once.
         """
 
-        class Root(Operator, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True, abstract=True):
             pass
 
         class SubClassOfRoot(Root, abstract=True):
