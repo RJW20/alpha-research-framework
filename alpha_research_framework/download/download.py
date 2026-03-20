@@ -60,7 +60,7 @@ def download(
 
     stocks/{ticker}.parquet : pd.DataFrame \\
         Serialised DataFrame per requested ticker indexed by date containing raw
-        OHL(a)CV data for every date the ticker has data for.
+        (adjusted) OHLC and volume data for every date the ticker has data for.
     
     metadata.json : Metadata \\
         Serialised typed dictionary containing global static metadata for all
@@ -70,8 +70,8 @@ def download(
         Serialised dictionary containing the outcome per requested ticker.
         The possibilities are:
         - "success": data successfully retrieved.
-        - "no_data": if stock ticker is unrecognised or has no data over
-        requested period.
+        - "no_data": if ticker is unrecognised or has no data over requested
+        period.
         - "error: {error_name}": an error occurred during retrieval of requested
         ticker's data.
     """
@@ -119,34 +119,18 @@ def download(
             df.index = df.index.tz_localize(None).normalize()
             df.index.name = "date"
 
-            # Rename columns to canonical names
-            df = df.rename(
-                columns={
-                    "Open": "open",
-                    "High": "high",
-                    "Low": "low",
-                    "Close": "close",
-                    "Adj Close": "adj_close",
-                    "Volume": "volume",
-                }
+            # Compute adjusted values for OHL from adjusted C
+            df["adj_factor"] = df["Adj Close"] / df["Close"]
+            df["adj_open"] = df["adj_factor"] * df["Open"]
+            df["adj_high"] = df["adj_factor"] * df["High"]
+            df["adj_low"] = df["adj_factor"] * df["Low"]
+
+            # Keep only desired columns with normalised names
+            df.rename(
+                columns={"Adj Close": "adj_close", "Volume": "volume"},
+                inplace=True,
             )
-
-            # Add adj_factor column
-            df["adj_factor"] = df["adj_close"] / df["close"]
-            df.loc[df["close"] == 0, "adj_factor"] = pd.NA
-
-            # Keep only required columns
-            df = df[
-                [
-                    "open",
-                    "high",
-                    "low",
-                    "close",
-                    "adj_close",
-                    "volume",
-                    "adj_factor",
-                ]
-            ]
+            df = df[["adj_open", "adj_high", "adj_low", "adj_close", "volume"]]
 
             # Write parquet
             out_path = stock_path(dest, ticker)

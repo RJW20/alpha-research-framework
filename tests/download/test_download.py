@@ -1,31 +1,33 @@
 import json
-import shutil
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pandas as pd
 
-from alpha_research_framework import download
-from alpha_research_framework.download import metadata_path, stocks_path
-from alpha_research_framework.download.structure import log_path
+from alpha_research_framework.download import download
+from alpha_research_framework.download.structure import (
+    log_path,
+    metadata_path,
+    stocks_path,
+)
 
-DESTINATION = Path("download_test")
 TICKERS = {
     # Traded throughout date range
     "AAPL": {
         "has_data": True,
         "first_trading_day": pd.to_datetime("2020-01-02"),
         "last_trading_day": pd.to_datetime("2020-12-31"),
-        "first_close": 75.0875015258789,
-        "last_close": 132.69000244140625
+        "first_adj_close": 72.401,
+        "last_adj_close": 129.047,
     },
     # IPO'd in date range
     "SNOW": {
         "has_data": True,
         "first_trading_day": pd.to_datetime("2020-09-16"),
         "last_trading_day": pd.to_datetime("2020-12-31"),
-        "first_close": 253.92999267578125,
-        "last_close": 281.3999938964844
+        "first_adj_close": 253.930,
+        "last_adj_close": 281.400,
     },
     # Delisted in date range
     "LK": {"has_data": False},
@@ -40,29 +42,26 @@ class TestDownload(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Download test data."""
-        download(DESTINATION, TICKERS.keys(), START_DATE, YEARS)
+        """Create temporary directory abd download test data to it."""
+        cls.tmp_dir = TemporaryDirectory()
+        cls.dest = Path(cls.tmp_dir.name)
+        download(cls.dest, TICKERS.keys(), START_DATE, YEARS)
 
     @classmethod
     def tearDownClass(cls) -> None:
         """Remove test data."""
-        shutil.rmtree(DESTINATION, ignore_errors=True)
+        cls.tmp_dir.cleanup()
 
     def test_end_date(self) -> None:
-        """Verify end_date cannot be beyond the current date."""
+        """Verify `end_date` cannot be beyond the current date."""
 
         with self.assertRaises(ValueError):
-            download(
-                DESTINATION,
-                TICKERS.keys(),
-                pd.Timestamp.now().strftime("%Y-%m-%d"),
-                1
-            )
+            download(None, None, pd.Timestamp.now().strftime("%Y-%m-%d"), 1)
 
     def test_download_log(self) -> None:
         """Verify download log against known outcomes."""
 
-        with (log_path(DESTINATION)).open() as f:
+        with (log_path(self.dest)).open() as f:
             download_log = json.load(f)
 
         for ticker, info in TICKERS.items():
@@ -74,7 +73,7 @@ class TestDownload(unittest.TestCase):
     def test_metadata(self) -> None:
         """Verify metadata."""
 
-        with (metadata_path(DESTINATION)).open() as f:
+        with (metadata_path(self.dest)).open() as f:
             metadata = json.load(f)
 
         self.assertEqual(metadata["start_date"], START_DATE)
@@ -95,11 +94,19 @@ class TestDownload(unittest.TestCase):
         for ticker, info in TICKERS.items():
             if not info["has_data"]:
                 continue
-            df = pd.read_parquet(stocks_path(DESTINATION) / f"{ticker}.parquet")
+            df = pd.read_parquet(stocks_path(self.dest) / f"{ticker}.parquet")
             self.assertEqual(df.index[0], info["first_trading_day"])
             self.assertEqual(df.index[-1], info["last_trading_day"])
-            self.assertEqual(df["close"].iloc[0], info["first_close"])
-            self.assertEqual(df["close"].iloc[-1], info["last_close"])
+            self.assertAlmostEqual(
+                df["adj_close"].iloc[0],
+                info["first_adj_close"],
+                places=3,
+            )
+            self.assertAlmostEqual(
+                df["adj_close"].iloc[-1],
+                info["last_adj_close"],
+                places=3,
+            )
 
 
 if __name__ == "__main__":
