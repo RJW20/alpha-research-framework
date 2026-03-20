@@ -1,8 +1,8 @@
 from typing import TypedDict
 
 
-class StockInfo(TypedDict):
-    """Static stock information."""
+class TickerInfo(TypedDict):
+    """Static ticker information."""
 
     exchange: str
     currency: str
@@ -18,4 +18,4 @@ class Metadata(TypedDict):
     source: str
     start_date: str
     end_date: str
-    tickers: dict[str, StockInfo]
+    tickers: dict[str, TickerInfo]

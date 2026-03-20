@@ -19,7 +19,7 @@ def _write_metadata(root: Path, metadata: Metadata) -> None:
 
 def _get_dates(start_date: str, end_date: str) -> pd.Index:
     nyse = mcal.get_calendar('NYSE')
-    schedule = nyse.schedule(start_date, end_date)
+    schedule = nyse.schedule(start_date, end_date)                              # type: ignore
     return schedule.index.astype('datetime64[ms]')
 
 

@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 import pandas as pd
 
 from alpha_research_framework import EquityData
-from alpha_research_framework.download import Metadata, StockInfo, stock_path
+from alpha_research_framework.download import Metadata, TickerInfo, stock_path
 from alpha_research_framework.equity_data.sector import (
     INDUSTRIES_PER_SECTOR,
     Industry,
@@ -18,10 +18,10 @@ class TestEquityDataSectorIndustry(unittest.TestCase):
 
     def test_validate(self) -> None:
         """
-        Verify sector, industry validity for pairs:
-        - None, None
-        - sector, None
-        - sector, industry in INDUSTRIES_PER_SECTOR[sector]
+        Verify `sector`, `industry` validity for pairs:
+        - `None`, `None`
+        - `sector`, `None`
+        - `sector`, `industry` in `INDUSTRIES_PER_SECTOR[sector]`
         """
 
         EquityData._validate(None, None)
@@ -44,10 +44,10 @@ class TestEquityDataSectorIndustry(unittest.TestCase):
 
     def test_extract_tickers(self) -> None:
         """
-        Verify tickers are extracted by sector and industry when specified.
+        Verify tickers are extracted by `sector` and `industry` when specified.
         """
 
-        tickers: dict[str, StockInfo] = {
+        tickers: dict[str, TickerInfo] = {
             "AAA": {
                 "exchange": "NYSE",
                 "currency": "USD",
@@ -119,7 +119,7 @@ class TestEquityDataTickersDates(unittest.TestCase):
 
     def setUp(self) -> None:
         """
-        Create a temporary directory with files to make an EquityData instance
+        Create a temporary directory with files to make an `EquityData` instance
         from.
         """
 
@@ -138,7 +138,7 @@ class TestEquityDataTickersDates(unittest.TestCase):
         return EquityData(self.src, sector, industry)
 
     def test_assert_all_tickers_exist(self) -> None:
-        """Verify a ticker with no stock file causes a FileNotFoundError."""
+        """Verify a ticker with no stock file causes a `FileNotFoundError`."""
 
         equity_data = self._build_equity_data()
         stock_path(self.src, "AAA").unlink()
@@ -146,7 +146,7 @@ class TestEquityDataTickersDates(unittest.TestCase):
             equity_data._assert_all_tickers_exist()
 
     def test_assert_contains(self) -> None:
-        """Verify a ticker not in the equity data causes a ValueError."""
+        """Verify a ticker not in the equity data causes a `ValueError`."""
 
         equity_data = self._build_equity_data()
         equity_data._assert_contains("AAA")
@@ -155,19 +155,21 @@ class TestEquityDataTickersDates(unittest.TestCase):
         with self.assertRaises(ValueError):
             equity_data._assert_contains("DDD")
 
-    def test_load_stock(self) -> None:
-        """Verify the info and dataframe returned are correct and aligned."""
+    def test_load_ticker(self) -> None:
+        """
+        Verify `TickerInfo` and `TickerData` returned are correct and aligned.
+        """
 
         equity_data = self._build_equity_data()
-        info, df = equity_data.load_stock("AAA")
+        info, data = equity_data._load_ticker("AAA")
 
         self.assertEqual(
             info, self.METADATA["tickers"]["AAA"]
         )
 
-        pd.testing.assert_index_equal(df.index, equity_data.dates)
+        pd.testing.assert_index_equal(data.index, equity_data.dates)
         self.assertEqual(
-            df.columns.to_list(),
+            data.columns.to_list(),
             ["adj_close", "volume", "adj_factor"]
         )
 

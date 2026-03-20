@@ -7,7 +7,7 @@ import pandas_market_calendars as mcal
 
 from alpha_research_framework.download import (
     Metadata,
-    StockInfo,
+    TickerInfo,
     metadata_path,
     stock_path,
 )
@@ -16,6 +16,7 @@ from alpha_research_framework.equity_data.sector import (
     Industry,
     Sector,
 )
+from alpha_research_framework.equity_data.ticker_data import TickerData
 
 
 class EquityData:
@@ -32,9 +33,9 @@ class EquityData:
         Directory containing equity metadata and per-ticker market data, ideally
         created by `download`.
     sector : Sector, optional
-        Sector to exclusively expose stocks from.
+        Sector to exclusively expose tickers from.
     industry : Industry, optional
-        Industry to exclusively expose stocks from (must belong to `sector`,
+        Industry to exclusively expose tickers from (must belong to `sector`,
         cannot be specified if `sector` isn't).
 
     Attributes
@@ -42,11 +43,11 @@ class EquityData:
     dates : pd.Index
         Listing of all dates with market data.
     tickers : set[str]
-        Listing of all stock tickers with market data.
+        Listing of all tickers with market data.
 
     Methods
     -------
-    - `load_stock(str)`
+    - `[str]`
 
     Raises
     ------
@@ -57,8 +58,8 @@ class EquityData:
         If a ticker listed in the metadata within `src` doesn't have a raw stock
         file (if `src` wasn't created purely by `download`).
     ValueError
-        If a requested stock ticker to load is not contained within this
-        `EquityData` instance.
+        If a requested ticker is not contained within this `EquityData`
+        instance.
     """
 
     def __init__(
@@ -70,11 +71,11 @@ class EquityData:
         """Load the metadata and validate `sector` and `industry`."""
 
         self._src = src
-        self._metadata = self._load_metadata(src)
-        self._validate(sector, industry)
+        self._metadata = EquityData._load_metadata(src)
+        EquityData._validate(sector, industry)
         self._sector = sector
         self._industry = industry
-        self._tickers = self._extract_tickers(
+        self._tickers = EquityData._extract_tickers(
             self._metadata["tickers"],
             sector,
             industry
@@ -88,7 +89,7 @@ class EquityData:
         nyse = mcal.get_calendar('NYSE')
         start_date = self._metadata["start_date"]
         end_date = self._metadata["end_date"]
-        schedule = nyse.schedule(start_date, end_date)
+        schedule = nyse.schedule(start_date, end_date)                          # type: ignore
         return schedule.index.astype('datetime64[ms]')
     
     @property
@@ -98,26 +99,14 @@ class EquityData:
         instance.
         """
         return self._tickers
-
-    def load_stock(self, ticker: str) -> tuple[StockInfo, pd.DataFrame]:
-        """
-        Return a tuple containing stock information and a dataframe indexed by
-        date holding raw stock data.
-
-        Raises a ValueError if the ticker is not in the EquityData.
-        """
-
-        self._assert_contains(ticker)
-        info = self._metadata["tickers"][ticker]
-        data = pd.read_parquet(
-            stock_path(self._src, ticker)
-        ).reindex(self.dates)
-        return info, data
+    
+    def __getitem__(self, key: str) -> tuple[TickerInfo, TickerData]:
+        return self._load_ticker(key)
 
     @staticmethod
     def _load_metadata(src: Path) -> Metadata:
         """
-        Return a `dictionary` containing metadata about the stocks contained in
+        Return a `dictionary` containing metadata about the tickers contained in
         `src`.
         """
         with (metadata_path(src)).open() as f:
@@ -149,7 +138,7 @@ class EquityData:
             
     @staticmethod
     def _extract_tickers(
-        tickers: dict[str, StockInfo],
+        tickers: dict[str, TickerInfo],
         sector: Sector | None,
         industry: Industry | None
     ) -> set[str]:
@@ -186,6 +175,21 @@ class EquityData:
                     f"Ticker {ticker} found in '{metadata_path(self._src)}' "
                     f"should have a raw stock file '{path}'."
                 )
+            
+    def _load_ticker(self, ticker: str) -> tuple[TickerInfo, TickerData]:
+        """
+        Return a tuple containing ticker information and data.
+
+        Raises a `ValueError` if the ticker is not in this `EquityData`
+        instance.
+        """
+
+        self._assert_contains(ticker)
+        info = self._metadata["tickers"][ticker]
+        data = pd.read_parquet(
+            stock_path(self._src, ticker)
+        ).reindex(self.dates)
+        return info, data
 
     def _assert_contains(self, ticker: str) -> None:
         """Raise a `ValueError` if ticker is not in `self.tickers`."""
