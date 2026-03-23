@@ -1,8 +1,17 @@
-from typing import TYPE_CHECKING, TypeAlias
+import alpha_research_framework.observables as observables
+from alpha_research_framework.features.feature import Feature
+from alpha_research_framework.features.primitive_feature import PrimitiveFeature
 
-import alpha_research_framework.market_data as md
+# ------------------------------------------------------------------------------
+# Primitives
+# ------------------------------------------------------------------------------
 
-if TYPE_CHECKING:
-    from alpha_research_framework.features.feature import Feature
+class Price(PrimitiveFeature):
+    """`feature` = `observables.Close`"""
+    TAG = Feature.Tag.PREDICTOR
+    OBSERVABLE = observables.Close
 
-Features: TypeAlias = dict[type["Feature"], md.Array]
+class Volume(PrimitiveFeature):
+    """`feature` = `observables.Volume`"""
+    TAG = Feature.Tag.PREDICTOR
+    OBSERVABLE = observables.Volume

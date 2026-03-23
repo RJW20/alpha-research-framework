@@ -1,197 +1,20 @@
 import unittest
-from typing import override
 
-import numpy as np
-import pandas as pd
-
-import alpha_research_framework.market_data as md
-from alpha_research_framework.features.feature import (
-    DependencyError,
-    Feature,
-    Features,
-)
-from tests.utils import RegistryIsolatedTestCase
+from alpha_research_framework.features.feature import Feature
 
 
-class TestFeatureTag(RegistryIsolatedTestCase):
-    REGISTRY_OWNER = Feature
+class TestFeatureTag(unittest.TestCase):
 
     def test_class_var_assertion(self) -> None:
         """Verify definition and type of `TAG` asserted when subclassing."""
 
         with self.assertRaises(AttributeError):
             class NoTag(Feature):
-                ID = "no_tag"
+                pass
 
         with self.assertRaises(TypeError):
             class IncompatibleTag(Feature):
-                ID = "incompatible_tag"
                 TAG = 1
-
-
-class TestFeatureDependencies(RegistryIsolatedTestCase):
-    REGISTRY_OWNER = Feature
-
-    def test_class_var_assertion(self) -> None:
-        """
-        Verify definition and type of `DEPENDENCIES` asserted when subclassing.
-        """
-
-        with self.assertRaises(AttributeError):
-            class NoDependencies(Feature):
-                ID = "no_dependencies"
-                TAG = Feature.Tag.PREDICTOR
-
-        with self.assertRaises(TypeError):
-            class IncompatibleDependenciesContainer(Feature):
-                ID = "incompatible_dependencies_container"
-                TAG = Feature.Tag.PREDICTOR
-                DEPENDENCIES = list()
-
-        with self.assertRaises(TypeError):
-            class IncompatibleDependenciesElement(Feature):
-                ID = "incompatible_dependencies_element"
-                TAG = Feature.Tag.PREDICTOR
-                DEPENDENCIES = {1}
-
-    def test_assert_tags(self) -> None:
-        """
-        Verify `_assert_dependencies_tags` asserts `Feature.TAG < cls.TAG` for
-        all features in `cls.DEPENDENCIES`.
-        """
-
-        class Predictor(Feature, abstract=True):
-            TAG = Feature.Tag.PREDICTOR
-
-        class Target(Feature, abstract=True):
-            TAG = Feature.Tag.TARGET
-
-        class PredictorOnPredictor(Feature, abstract=True):
-            TAG = Feature.Tag.PREDICTOR
-            DEPENDENCIES = {Predictor}
-        PredictorOnPredictor._assert_dependencies_tags()
-
-        class PredictorOnTarget(Feature, abstract=True):
-            TAG = Feature.Tag.PREDICTOR
-            DEPENDENCIES = {Target}
-        with self.assertRaises(ValueError):
-            PredictorOnTarget._assert_dependencies_tags()
-
-        class TargetOnPredictor(Feature, abstract=True):
-            TAG = Feature.Tag.TARGET
-            DEPENDENCIES = {Predictor}
-        TargetOnPredictor._assert_dependencies_tags()
-
-        class TargetOnTarget(Feature, abstract=True):
-            TAG = Feature.Tag.TARGET
-            DEPENDENCIES = {Target}
-        TargetOnTarget._assert_dependencies_tags()
-
-
-    def test_wrap_compute(self) -> None:
-        """
-        Verify `compute` is wrapped wtih custom error reporting for insufficient
-        `cls.DEPENDENCIES or `features` argument.
-        """
-
-        class NotDependedOn(Feature):
-            ID = "not_depended_on"
-            TAG = Feature.Tag.PREDICTOR
-            DEPENDENCIES = set()
-
-        class DependedOn(Feature):
-            ID = "depended_on"
-            TAG = Feature.Tag.PREDICTOR
-            DEPENDENCIES = set()
-    
-        class HasCompute(Feature, abstract=True):
-            DEPENDENCIES = {DependedOn}
-            @classmethod
-            @override
-            def compute(
-                cls,
-                market_data: md.MarketData,
-                features: Features,
-                out: md.Array,
-            ) -> None:
-                # attempt to use non-dependency
-                features[NotDependedOn]
-                # attempt to use the dependency
-                features[DependedOn]
-
-        HasCompute._wrap_compute()
-
-        with self.assertRaises(DependencyError):
-            HasCompute.compute(None, {DependedOn: None}, None)
-
-        with self.assertRaises(DependencyError):
-            HasCompute.compute(None, {NotDependedOn: None}, None)
-
-        HasCompute.compute(
-            None,
-            {NotDependedOn: None, DependedOn: None},
-            None,
-        )
-
-
-class TestFeatureCalculations(unittest.TestCase):
-
-    T = 5000
-    N = 500
-
-    def test_rolling_average(self) -> None:
-        """
-        Verify `_rolling_average` calculation is same as `pandas` built-in
-        `DataFrame` version.
-        """
-
-        rng = np.random.default_rng(0)
-        x = rng.uniform(
-            0,
-            10,
-            (TestFeatureCalculations.T, TestFeatureCalculations.N),
-        ).astype(md.Scalar)
-        nan_mask = rng.uniform(size=x.shape) < 0.1
-        x[nan_mask] = np.nan
-
-        for lookback in [1, 10, 100, 1000]:
-
-            out = np.empty_like(x, dtype=md.Scalar)
-            Feature._rolling_average(x, lookback, out)
-            expected = (
-                pd.DataFrame(x)
-                .rolling(lookback, min_periods=1)
-                .mean()
-                .to_numpy(dtype=md.Scalar)
-            )
-            np.testing.assert_array_almost_equal(out, expected)
-
-    def test_rolling_std(self) -> None:
-        """
-        Verify `_rolling_std` calculation is same as `pandas` built-in
-        `DataFrame` version.
-        """
-
-        rng = np.random.default_rng(0)
-        x = rng.uniform(
-            0,
-            10,
-            (TestFeatureCalculations.T, TestFeatureCalculations.N),
-        ).astype(md.Scalar)
-        nan_mask = rng.uniform(size=x.shape) < 0.1
-        x[nan_mask] = np.nan
-
-        for lookback in [1, 10, 100, 1000]:
-
-            out = np.empty_like(x, dtype=md.Scalar)
-            Feature._rolling_std(x, lookback, out)
-            expected = (
-                pd.DataFrame(x)
-                .rolling(lookback, min_periods=1)
-                .std()
-                .to_numpy(dtype=md.Scalar)
-            )
-            np.testing.assert_array_almost_equal(out, expected)
 
 
 if __name__ == "__main__":
