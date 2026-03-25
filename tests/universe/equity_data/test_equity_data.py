@@ -4,9 +4,9 @@ from tempfile import TemporaryDirectory
 
 import pandas as pd
 
-from alpha_research_framework import EquityData
 from alpha_research_framework.download import Metadata, TickerInfo, stock_path
-from alpha_research_framework.equity_data.sector import (
+from alpha_research_framework.universe.equity_data.equity_data import EquityData
+from alpha_research_framework.universe.equity_data.sector import (
     INDUSTRIES_PER_SECTOR,
     Industry,
     Sector,
@@ -172,6 +172,7 @@ class TestEquityDataTickersDates(unittest.TestCase):
             data.columns.to_list(),
             ["adj_close", "volume", "adj_factor"]
         )
+
 
 if __name__ == "__main__":
     unittest.main()

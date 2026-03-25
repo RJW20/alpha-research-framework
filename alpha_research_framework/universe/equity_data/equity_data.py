@@ -11,12 +11,12 @@ from alpha_research_framework.download import (
     metadata_path,
     stock_path,
 )
-from alpha_research_framework.equity_data.sector import (
+from alpha_research_framework.universe.equity_data.sector import (
     INDUSTRIES_PER_SECTOR,
     Industry,
     Sector,
 )
-from alpha_research_framework.equity_data.ticker_data import TickerData
+from alpha_research_framework.universe.equity_data.ticker_data import TickerData
 
 
 class EquityData:

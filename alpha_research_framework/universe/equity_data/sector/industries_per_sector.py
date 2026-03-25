@@ -1,5 +1,7 @@
-from alpha_research_framework.equity_data.sector.industry import Industry
-from alpha_research_framework.equity_data.sector.sector import Sector
+from alpha_research_framework.universe.equity_data.sector.industry import (
+    Industry,
+)
+from alpha_research_framework.universe.equity_data.sector.sector import Sector
 
 INDUSTRIES_PER_SECTOR: dict[Sector, set[Industry]] = {
     "basic materials": {
