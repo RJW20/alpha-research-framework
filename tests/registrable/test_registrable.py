@@ -25,7 +25,7 @@ class TestRegistrableId(unittest.TestCase):
     def test_duplicate(self) -> None:
         """Verify 2 registrables with the same root cannot share `ID`."""
 
-        class Root(Registrable, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True):
             pass
 
         class Registrable1(Root):
@@ -38,7 +38,7 @@ class TestRegistrableId(unittest.TestCase):
     def test_from_id(self) -> None:
         """Verify `Registrable` returned by `id` matches."""
 
-        class Root(Registrable, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True):
             pass
 
         class DummyRegistrable(Root):
@@ -48,7 +48,7 @@ class TestRegistrableId(unittest.TestCase):
     def test_from_invalid_id(self) -> None:
         """Verify an error is raised when `id` is fictional."""
 
-        class Root(Registrable, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True):
             pass
 
         with self.assertRaises(ValueError):
@@ -63,10 +63,10 @@ class TestRegistrableRegistryRoot(unittest.TestCase):
         root.
         """
 
-        class Root1(Registrable, registry_root=True, abstract=True):
+        class Root1(Registrable, registry_root=True):
             pass
 
-        class Root2(Registrable, registry_root=True, abstract=True):
+        class Root2(Registrable, registry_root=True):
             pass
 
         class SubClassOfRoot1(Root1):
@@ -91,10 +91,10 @@ class TestRegistrableRegistryRoot(unittest.TestCase):
         registered in both.
         """
 
-        class Root1(Registrable, registry_root=True, abstract=True):
+        class Root1(Registrable, registry_root=True):
             pass
 
-        class Root2(Registrable, registry_root=True, abstract=True):
+        class Root2(Registrable, registry_root=True):
             pass
 
         class SubClassOfRoot1And2(Root1, Root2):
@@ -109,10 +109,10 @@ class TestRegistrableRegistryRoot(unittest.TestCase):
         registered once.
         """
 
-        class Root(Registrable, registry_root=True, abstract=True):
+        class Root(Registrable, registry_root=True):
             pass
 
-        class SubClassOfRoot(Root, abstract=True):
+        class SubClassOfRoot(Root, register=False):
             pass
 
         class DoubleSubClassOfRoot(SubClassOfRoot, Root):

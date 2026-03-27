@@ -29,15 +29,12 @@ class Factor(Operator, ClassVarValidator, metaclass=FactorMeta):
         """
 
         super().__init_subclass__(**kwargs)
-
-        if abstract:
-            return
-
-        cls.assert_class_var_container_of_subtype(
-            name="REQUIRED_FEATURES",
-            container_type=set,
-            element_base_type=features.Feature,
-        )
+        if not abstract:
+            cls.assert_class_var_container_of_subtype(
+                name="REQUIRED_FEATURES",
+                container_type=set,
+                element_base_type=features.Feature,
+            )
 
     @classmethod
     @abstractmethod

@@ -14,22 +14,20 @@ class PrimitiveFactor(Factor, ClassVarValidator, abstract=True):
     cross-section with automatic subclass validation.
 
     Any concrete subclass must define:
-    - `FEATURE`: `type[Feature]`: feature extracted from the cross-section
+    - `FEATURE`: `type[features.Feature]`: feature extracted from the cross-
+    section
     """
 
     FEATURE: ClassVar[type[features.Feature]]
 
-    def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """
-        If `abstract=False` asserts definition and type of `FEATURE` and creates
-        `REQUIRED_FEATURES` as a single-element set containing it.
+        Asserts definition and type of `FEATURE` and creates `REQUIRED_FEATURES`
+        as a single-element set containing it.
         """
 
-        if not abstract:
-            cls.assert_class_var_subtype("FEATURE", base_type=features.Feature)
-            cls.REQUIRED_FEATURES = {cls.FEATURE}
-
-        kwargs["abstract"] = abstract
+        cls.assert_class_var_subtype("FEATURE", base_type=features.Feature)
+        cls.REQUIRED_FEATURES = {cls.FEATURE}
         super().__init_subclass__(**kwargs)
 
     @classmethod

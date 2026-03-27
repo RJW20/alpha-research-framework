@@ -6,20 +6,20 @@ from typing import Any, ClassVar
 from alpha_research_framework.class_var_validator import ClassVarValidator
 
 
-class Registrable(ClassVarValidator, ABC):
+class Registrable(ABC, ClassVarValidator):
     """
     Abstract base class for subclasses wishing to maintain a registry of their
-    concrete subclasses.
+    subclasses.
 
     Responsibilities:
-    - Maintain a per-registry-root-class `__registry__` of concrete subclasses.
-    - Enforce that concrete subclasses define a unique string `ID`.
+    - Maintain a per-registry-root-class `__registry__` of subclasses.
+    - Enforce that subclasses define a unique string `ID`.
     - Provide a classmethod `from_id` for lookup.
 
     When subclassing:
     - Passing `registry_root=True` initialises a new `__registry__` for the
     subclass (and it's subclasses).
-    - Passing `abstract=True` prevents the requirement of `ID` and doesn't
+    - Passing `register=False` prevents the requirement of `ID` and doesn't
     register the subclass.
     """
 
@@ -33,12 +33,12 @@ class Registrable(ClassVarValidator, ABC):
         cls,
         *,
         registry_root: bool = False,
-        abstract: bool = False,
+        register: bool = True,
         **kwargs: Any,
     ) -> None:
         """
         If `registry_root=True` initialises a new `__registry__`.
-        If `abstract=False` asserts definition, type, value and uniqueness of
+        If `register=True` asserts definition, type, value and uniqueness of
         `ID` and adds subclass to `__registry__`.
         """
 
@@ -46,8 +46,9 @@ class Registrable(ClassVarValidator, ABC):
 
         if registry_root:
             cls.__registry__ = dict()
+            return
 
-        if abstract:
+        if not register:
             return
         
         cls.assert_class_var(name="ID", type=str, bad_values={""})
