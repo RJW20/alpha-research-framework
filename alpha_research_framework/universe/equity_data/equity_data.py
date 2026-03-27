@@ -23,44 +23,10 @@ from .ticker_data import TickerData
 class EquityData:
     """
     Container providing validated, read-only access to equity metadata and
-    raw per-ticker market data stored on disk.
+    raw per-ticker market data stored on-disk.
 
     Instances represent a filtered view of the full dataset. If `sector` and/or
     `industry` are provided, only matching tickers are exposed.
-
-    Parameters
-    ----------
-    src : Path
-        Directory containing equity metadata and per-ticker market data, ideally
-        created by `download`.
-    sector : Sector, optional
-        Sector to exclusively expose tickers from.
-    industry : Industry, optional
-        Industry to exclusively expose tickers from (must belong to `sector`,
-        cannot be specified if `sector` isn't).
-
-    Attributes
-    ----------
-    dates : pd.Index
-        Listing of all dates with market data.
-    tickers : set[str]
-        Listing of all tickers with market data.
-
-    Methods
-    -------
-    - `[str]`
-
-    Raises
-    ------
-    ValueError
-        If `sector` is invalid, `industry` does not belong to `sector` or
-        `industry` is specified but `sector` is not.
-    FileNotFoundError
-        If a ticker listed in the metadata within `src` doesn't have a raw stock
-        file (if `src` wasn't created purely by `download`).
-    ValueError
-        If a requested ticker is not contained within this `EquityData`
-        instance.
     """
 
     def __init__(

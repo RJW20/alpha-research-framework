@@ -17,5 +17,5 @@ class Calendar:
     def date(self, t: int) -> pd.Timestamp:
         return self.index[t]
     
-    def t(self, date: pd.Timestamp):
-        return self.index.get_loc(date)
+    def t(self, date: pd.Timestamp) -> int:
+        return self.index.get_loc(date)                                         # type: ignore
