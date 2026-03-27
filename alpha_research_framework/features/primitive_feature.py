@@ -2,8 +2,9 @@ from typing import Any, ClassVar, override
 
 import alpha_research_framework.market_data as md
 import alpha_research_framework.observables as observables
-from alpha_research_framework.features.feature import Feature
-from alpha_research_framework.features.feature_cache import FeatureCache
+
+from .feature import Feature
+from .feature_cache import FeatureCache
 
 
 class PrimitiveFeature(Feature, abstract=True):
@@ -13,8 +14,8 @@ class PrimitiveFeature(Feature, abstract=True):
 
     Any concrete subclass must define:
     - `TAG`: `Feature.Tag` (`PREDICTOR` or `TARGET`) - usage classification
-    - `OBSERVABLE`: `type[Observable]`: observable extracted from the market
-    data
+    - `OBSERVABLE`: `type[observables.Observable]`: observable extracted from
+    the market data
     """
 
     OBSERVABLE: ClassVar[type[observables.Observable]]
@@ -23,7 +24,6 @@ class PrimitiveFeature(Feature, abstract=True):
         """Asserts definition and type of `OBSERVABLE`."""
 
         super().__init_subclass__(**kwargs)
-
         cls.assert_class_var_subtype(
             name="OBSERVABLE",
             base_type=observables.Observable,

@@ -3,7 +3,8 @@ from typing import Any, override
 import numpy as np
 
 import alpha_research_framework.market_data as md
-from alpha_research_framework.features.transforms.transform import Transform
+
+from .transform import Transform
 
 
 class LeadDifference(Transform):

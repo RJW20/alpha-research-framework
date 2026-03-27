@@ -2,8 +2,9 @@ from abc import abstractmethod
 from typing import Any, ClassVar, override
 
 import alpha_research_framework.market_data as md
-from alpha_research_framework.features.feature import Feature
-from alpha_research_framework.features.feature_cache import FeatureCache
+
+from .feature import Feature
+from .feature_cache import FeatureCache
 
 
 class DerivedFeature(Feature, abstract=True):
@@ -22,7 +23,6 @@ class DerivedFeature(Feature, abstract=True):
         """Asserts definition and type of `SOURCE`."""
         
         super().__init_subclass__(**kwargs)
-
         cls.assert_class_var_subtype("SOURCE", base_type=Feature)
 
     @classmethod

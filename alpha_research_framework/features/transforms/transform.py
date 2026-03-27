@@ -2,10 +2,9 @@ from abc import abstractmethod
 from typing import Any
 
 import alpha_research_framework.market_data as md
-from alpha_research_framework.features.transforms.transform_meta import (
-    TransformMeta,
-)
 from alpha_research_framework.operator import Operator
+
+from .transform_meta import TransformMeta
 
 
 class Transform(Operator, metaclass=TransformMeta):

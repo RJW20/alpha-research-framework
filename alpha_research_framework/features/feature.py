@@ -6,8 +6,9 @@ from typing import Any, ClassVar
 
 import alpha_research_framework.market_data as md
 from alpha_research_framework.class_var_validator import ClassVarValidator
-from alpha_research_framework.features.feature_cache import FeatureCache
 from alpha_research_framework.operator import Operator
+
+from .feature_cache import FeatureCache
 
 
 class Feature(Operator, ClassVarValidator):
@@ -29,11 +30,8 @@ class Feature(Operator, ClassVarValidator):
         """If `abstract=False` asserts definition and type of `TAG`."""
         
         super().__init_subclass__(**kwargs)
-
-        if abstract:
-            return
-
-        cls.assert_class_var("TAG", type=Feature.Tag)
+        if not abstract:
+            cls.assert_class_var("TAG", type=Feature.Tag)
 
     @classmethod
     @abstractmethod

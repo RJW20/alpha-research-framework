@@ -1,8 +1,9 @@
-import alpha_research_framework.features.transforms as transforms
 import alpha_research_framework.observables as observables
-from alpha_research_framework.features.feature import Feature
-from alpha_research_framework.features.primitive_feature import PrimitiveFeature
 from alpha_research_framework.window import Window
+
+from . import transforms
+from .feature import Feature
+from .primitive_feature import PrimitiveFeature
 
 # ------------------------------------------------------------------------------
 # Primitives
