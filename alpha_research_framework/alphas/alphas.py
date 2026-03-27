@@ -1,107 +1,100 @@
-from typing import override
-
-import alpha_research_framework.market_data as md
-from alpha_research_framework.alphas.returns_based import ReturnsBased
-from alpha_research_framework.alphas.risk_adjusted_returns import (
-    RiskAdjustedReturns,
-)
-from alpha_research_framework.alphas.volatility import Volatility
-from alpha_research_framework.universe import CrossSection
 from alpha_research_framework.window import Window
 
-# -----------------------------------------------------------------------------
+from . import factors
+from .alpha import Alpha
+
+# ------------------------------------------------------------------------------
 # Short Term Reversal
 # Hypothesis: large short-term moves are often an overreaction
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-class Reversal1d(ReturnsBased):
+class Reversal1d(Alpha):
     """
     - Signal: `-returns_1d`
     - Horizons: `1d`, `5d`
     """
     ID = "reversal_1d"
     CATEGORY = "short_term_reversal"
-    LOOKBACK = Window.DAY
+    SIGNAL = -factors.Returns1d
     HORIZONS = {Window.DAY, Window.WEEK}
-    @classmethod
-    @override
-    def compute(cls, x: CrossSection) -> md.Array:
-        return super().compute(x) * -1
 
-class Reversal5d(ReturnsBased):
+class Reversal5d(Alpha):
     """
     - Signal: `-returns_5d`
     - Horizons: `1d`, `5d`
     """
     ID = "reversal_5d"
     CATEGORY = "short_term_reversal"
-    LOOKBACK = Window.WEEK
+    SIGNAL = -factors.Returns5d
     HORIZONS = {Window.DAY, Window.WEEK}
-    @classmethod
-    @override
-    def compute(cls, x: CrossSection) -> md.Array:
-        return super().compute(x) * -1
     
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Momentum
 # Hypothesis: price trends persist
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-class Momentum12m(ReturnsBased):
+class Momentum20d(Alpha):
+    """
+    - Signal: `returns_20d`
+    - Horizons: `1d`, `5d`, `20d`
+    """
+    ID = "momentum_20d"
+    CATEGORY = "momentum"
+    SIGNAL = factors.Returns20d
+    HORIZONS = {Window.DAY, Window.WEEK, Window.MONTH}
+
+class Momentum12m(Alpha):
     """
     - Signal: `returns_252d`
     - Horizons: `20d`, `63d`, `126d`, `252d`
     """
     ID = "momentum_12m"
     CATEGORY = "momentum"
-    LOOKBACK = Window.YEAR
-    SKIP = Window.MONTH
+    SIGNAL = factors.Returns252d
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
 
-class Momentum12m1m(ReturnsBased):
+class Momentum12m1m(Alpha):
     """
     - Signal: `returns_252d - returns_20d`
     - Horizons: `20d`, `63d`, `126d`, `252d`
     """
     ID = "momentum_12m_1m"
     CATEGORY = "momentum"
-    LOOKBACK = Window.YEAR
+    SIGNAL = factors.Returns252d - factors.Returns20d
     SKIP = Window.MONTH
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
 
-class RiskAdjustedMomentum12m1m(RiskAdjustedReturns):
+class RiskAdjustedMomentum12m1m(Alpha):
     """
     - Signal: `(returns_252d - returns_20d) / volatility_252d`
     - Horizons: `20d`, `63d`, `126d`, `252d`
     """
     ID = "risk_adjusted_momentum_12m_1m"
     CATEGORY = "momentum"
-    RETURNS_LOOKBACK = Window.YEAR
-    RETURNS_SKIP = Window.MONTH
-    VOLATILITY_LOOKBACK = Window.YEAR
+    SIGNAL = (factors.Returns252d - factors.Returns20d) / factors.Volatility252d
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Volatility
 # Hypothesis: market overprices volatility
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-class Volatility20d(Volatility):
+class Volatility20d(Alpha):
     """
     - Signal = `-volatility_20d`
     - Horizons = `1d`, `5d`, `20d`
     """
     ID = "volatility_20d"
     CATEGORY = "volatility"
-    LOOKBACK = Window.MONTH
+    SIGNAL = -factors.Volatility20d
     HORIZONS = {Window.DAY, Window.WEEK, Window.MONTH}
 
-class Volatility12m(Volatility):
+class Volatility12m(Alpha):
     """
     - Signal = `-volatility_252d`
     - Horizons = `20d`, `63d`, `126d`, `252d`
     """
     ID = "volatility_12m"
     CATEGORY = "volatility"
-    LOOKBACK = Window.YEAR
+    SIGNAL = -factors.Volatility252d
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
