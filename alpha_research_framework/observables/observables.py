@@ -1,4 +1,4 @@
-from alpha_research_framework.observables.observable import Observable
+from .observable import Observable
 
 
 class Open(Observable):

@@ -1,4 +1,4 @@
-from alpha_research_framework.registrable.registrable import Registrable
+from .registrable import Registrable
 
 
 def resolve(

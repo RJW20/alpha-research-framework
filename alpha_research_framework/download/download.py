@@ -7,13 +7,8 @@ from typing import Any, Iterable
 import pandas as pd
 import yfinance as yf
 
-from alpha_research_framework.download.metadata import Metadata
-from alpha_research_framework.download.structure import (
-    log_path,
-    metadata_path,
-    stock_path,
-    stocks_path,
-)
+from .metadata import Metadata
+from .structure import log_path, metadata_path, stock_path, stocks_path
 
 
 def _atomic_write_json(path: Path, data: dict[Any, Any]) -> None:
