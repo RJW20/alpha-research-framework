@@ -8,12 +8,12 @@ import pandas as pd
 
 import alpha_research_framework.features as features
 import alpha_research_framework.observables as observables
-import alpha_research_framework.universe.build_universe as build_universe
+import alpha_research_framework.universe.build as build
 from alpha_research_framework.scalar import Scalar
 from alpha_research_framework.window import Window
 
 
-class TestBuildUniverseFeatureObservableDeduction(unittest.TestCase):
+class TestBuildFeatureObservableDeduction(unittest.TestCase):
 
     def test_deduce_cross_sectional_features(self) -> None:
         """
@@ -27,7 +27,7 @@ class TestBuildUniverseFeatureObservableDeduction(unittest.TestCase):
             REQUIRED_FEATURES = {3, 4, 5}
 
         self.assertSetEqual(
-            build_universe._deduce_cross_sectional_features([AlphaA, AlphaB]),
+            build._deduce_cross_sectional_features([AlphaA, AlphaB]),
             {1, 2, 3, 4, 5},
         )
 
@@ -49,14 +49,14 @@ class TestBuildUniverseFeatureObservableDeduction(unittest.TestCase):
             TAG = features.Feature.Tag.PREDICTOR
             OBSERVABLE = HeadB
 
-        observables_, features_ = build_universe._scan_feature_tree(
+        observables_, features_ = build._scan_feature_tree(
             [DerivedA, PrimitiveB],
         )
         self.assertSetEqual(observables_, {HeadA, HeadB})
         self.assertSetEqual(features_, {PrimitiveA, DerivedA, PrimitiveB})
 
 
-class TestBuildUniverseMarketDataMask(unittest.TestCase):
+class TestBuildMarketDataMask(unittest.TestCase):
 
     def test_market_data(self) -> None:
         """
@@ -86,7 +86,7 @@ class TestBuildUniverseMarketDataMask(unittest.TestCase):
             }
         )
 
-        build_universe._populate_market_data(market_data, column, ticker_data)
+        build._populate_market_data(market_data, column, ticker_data)
 
         for obs in observables_:
             np.testing.assert_array_equal(
@@ -107,7 +107,7 @@ class TestBuildUniverseMarketDataMask(unittest.TestCase):
             }
         )
 
-        build_universe._populate_mask(
+        build._populate_mask(
             mask,
             0,
             ticker_info,
@@ -135,7 +135,7 @@ class TestBuildUniverseMarketDataMask(unittest.TestCase):
             }
         )
 
-        build_universe._populate_mask(
+        build._populate_mask(
             mask,
             0,
             ticker_info,
@@ -166,7 +166,7 @@ class TestBuildUniverseMarketDataMask(unittest.TestCase):
             }
         )
 
-        build_universe._populate_mask(
+        build._populate_mask(
             mask,
             0,
             ticker_info,
@@ -197,7 +197,7 @@ class TestBuildUniverseMarketDataMask(unittest.TestCase):
             }
         )
 
-        build_universe._populate_mask(
+        build._populate_mask(
             mask,
             0,
             ticker_info,
@@ -213,7 +213,7 @@ class TestBuildUniverseMarketDataMask(unittest.TestCase):
         )
 
 
-class TestBuildUniverseFeatures(unittest.TestCase):
+class TestBuildFeatures(unittest.TestCase):
 
     def test_order(self) -> None:
         """Verify a feature's `SOURCE` always comes before itself."""
@@ -230,11 +230,11 @@ class TestBuildUniverseFeatures(unittest.TestCase):
             SOURCE = Primitive
 
         self.assertListEqual(
-            list(build_universe._order([Primitive, Derived])),
+            list(build._order([Primitive, Derived])),
             [Primitive, Derived],
         )
         self.assertListEqual(
-            list(build_universe._order([Derived, Primitive])),
+            list(build._order([Derived, Primitive])),
             [Primitive, Derived],
         )
 
@@ -262,7 +262,7 @@ class TestBuildUniverseFeatures(unittest.TestCase):
         TwosFeature = Double(OnesFeature)
 
         tmp_dir = TemporaryDirectory()
-        features_ = build_universe._allocate_storage(
+        features_ = build._allocate_storage(
             [OnesFeature, TwosFeature],
             path=Path(tmp_dir.name),
             shape=(T, N),
@@ -270,7 +270,7 @@ class TestBuildUniverseFeatures(unittest.TestCase):
 
         market_data = {OnesObservable: np.ones((T,N))}
 
-        build_universe._build(features_, market_data=market_data)
+        build._build(features_, market_data=market_data)
 
         np.testing.assert_array_equal(features_[OnesFeature], np.ones((T,N)))
         np.testing.assert_array_equal(features_[TwosFeature], np.full((T,N), 2))
