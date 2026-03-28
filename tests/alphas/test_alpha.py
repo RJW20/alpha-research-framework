@@ -26,19 +26,19 @@ class TestAlphaCategory(RegistryIsolatedTestCase):
                 CATEGORY = 1
 
 
-class TestAlphaFactor(RegistryIsolatedTestCase):
+class TestAlphaSignal(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Alpha
 
     def test_class_var_assertion(self) -> None:
         """Verify definition and type of `SIGNAL` asserted when subclassing."""
 
         with self.assertRaises(AttributeError):
-            class NoFactor(Alpha):
+            class NoSignal(Alpha):
                 ID = "no_signal"
                 CATEGORY = "testing_signal"
 
         with self.assertRaises(TypeError):
-            class IncompatibleFactor(Alpha):
+            class IncompatibleSignal(Alpha):
                 ID = "incompatible_signal"
                 CATEGORY = "testing_signal"
                 SIGNAL = features.Feature
