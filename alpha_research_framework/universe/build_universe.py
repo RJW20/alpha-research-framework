@@ -321,7 +321,7 @@ def build_universe_for(
     """
 
     resolved_alphas = {resolve(a, alphas.Alpha) for a in alphas_}
-    xs_features = _deduce_cross_sectional_features(resolved_alphas)             # type: ignore
+    xs_features = _deduce_cross_sectional_features(resolved_alphas)
     required_observables, required_features = _scan_feature_tree(xs_features)
 
     equity_data = EquityData(src, sector, industry)

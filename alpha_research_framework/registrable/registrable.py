@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 from alpha_research_framework.class_var_validator import ClassVarValidator
 
@@ -24,7 +24,7 @@ class Registrable(ABC, ClassVarValidator):
     """
 
     # Only meaningful for registry roots
-    __registry__: ClassVar[dict[str, type[Registrable]]]
+    __registry__: ClassVar[dict[str, type[Self]]]
 
     # Each concrete subclass must define a unique string ID
     ID: ClassVar[str]
@@ -53,8 +53,8 @@ class Registrable(ABC, ClassVarValidator):
         
         cls.assert_class_var(name="ID", type=str, bad_values={""})
         
-        root_registries = [
-            (base, base.__registry__)
+        root_registries = [                                                     # type: ignore
+            (base, base.__registry__)                                           # type: ignore
             for base in set(cls.__mro__[1:])
             if "__registry__" in base.__dict__
         ]
@@ -63,7 +63,7 @@ class Registrable(ABC, ClassVarValidator):
                 f"{cls.__name__} is concrete but does not have a registry - "
                 "ensure a registry root exists in the inheritance chain"
             )
-        for base, registry in root_registries:
+        for base, registry in root_registries:                                  # type: ignore
             if cls.ID in registry:
                 raise ValueError(
                     f"Duplicate ID '{cls.ID}' found in registry for "
@@ -72,7 +72,7 @@ class Registrable(ABC, ClassVarValidator):
             registry[cls.ID] = cls
 
     @classmethod
-    def from_id(cls, id: str) -> type[Registrable]:
+    def from_id(cls, id: str) -> type[Self]:
         """Return the concrete subclass with `ID = id`."""
         if id not in cls.__registry__:
             raise ValueError(

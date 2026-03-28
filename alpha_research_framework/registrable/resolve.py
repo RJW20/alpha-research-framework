@@ -1,10 +1,12 @@
+from typing import TypeVar
+
 from .registrable import Registrable
 
-
+T = TypeVar('T', bound=Registrable)
 def resolve(
-    registrable: str | type[Registrable],
-    registrable_subtype: type[Registrable],
-) -> type[Registrable]:
+    registrable: str | type[T],
+    registrable_subtype: type[T],
+) -> type[T]:
     """
     Return the subtype of `registrable_subtype` referenced by `registrable`.
 
