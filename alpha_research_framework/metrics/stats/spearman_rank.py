@@ -1,8 +1,8 @@
 import numpy as np
 
-from alpha_research_framework.metrics.stats import extract_valid
-from alpha_research_framework.metrics.stats.pearson_scalar import pearson_scalar
-from alpha_research_framework.metrics.stats.rankdata import rankdata
+from .extract_valid import extract_valid
+from .pearson_scalar import pearson_scalar
+from .rankdata import rankdata
 
 
 def spearman_rank(x: np.ndarray, y: np.ndarray) -> float:

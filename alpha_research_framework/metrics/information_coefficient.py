@@ -1,10 +1,9 @@
 from typing import override
 
-import alpha_research_framework.market_data as md
-from alpha_research_framework.metrics.single_value_metric import (
-    SingleValueMetric,
-)
-from alpha_research_framework.metrics.stats import spearman_rank
+import alpha_research_framework.cross_section as xs
+
+from .single_value_metric import SingleValueMetric
+from .stats import spearman_rank
 
 
 class InformationCoefficient(SingleValueMetric):
@@ -13,7 +12,7 @@ class InformationCoefficient(SingleValueMetric):
  
     @classmethod
     @override
-    def compute(cls, signal: md.Array, future_returns: md.Array) -> float:
+    def compute(cls, signal: xs.Array, future_returns: xs.Array) -> float:
         """
         Return the Spearman's rank correlation coefficient between `signal` and
         `future_returns`.

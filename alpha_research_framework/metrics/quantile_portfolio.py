@@ -3,11 +3,10 @@ from typing import override
 import numpy as np
 import numpy.typing as npt
 
-import alpha_research_framework.market_data as md
-import alpha_research_framework.metrics.stats as stats
-from alpha_research_framework.metrics.multi_value_metric import (
-    MultiValueMetric,
-)
+import alpha_research_framework.cross_section as xs
+
+from . import stats
+from .multi_value_metric import MultiValueMetric
 
 
 class QuantilePorfolio(MultiValueMetric):
@@ -23,8 +22,8 @@ class QuantilePorfolio(MultiValueMetric):
     @override
     def compute(
         cls,
-        signal: md.Array,
-        future_returns: md.Array
+        signal: xs.Array,
+        future_returns: xs.Array
     ) -> npt.NDArray[np.floating]:
         """
         Return a `NumPy` array of average `future_returns` per quantile in
