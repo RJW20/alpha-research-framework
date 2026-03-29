@@ -41,7 +41,7 @@ class DerivedFeature(Feature, abstract=True):
         try:
             out[:] = cache[cls]
         except KeyError:
-            out[:] = cls._compute(market_data, cache, out)
+            cls._compute(market_data, cache, out)
 
     @classmethod
     @abstractmethod

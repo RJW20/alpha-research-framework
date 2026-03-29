@@ -17,7 +17,7 @@ class TransformMeta(OperatorMeta):
     @override
     def __call__(
         cls,                                                                    # noqa: N805
-        feature_cls: type[Feature],
+        source_cls: type[Feature],
         *,
         target: bool = False,
         **kwargs: Any,
@@ -26,40 +26,43 @@ class TransformMeta(OperatorMeta):
         Return a dynamicly generated concrete subclass of `DerivedFeature`.
 
         The subclass' `TAG` will be `PREDICTOR` unless `target=True`.
-        The subclass' `SOURCE` will be `feature_cls`.
+        The subclass' `SOURCE` will be `source_cls`.
         The subclass' `compute` will be the application of `cls.compute` to the
-        result of `feature_cls.compute`.
+        result of `source_cls.compute`.
         `kwargs` are forwarded to `cls.compute`.
         """
 
-        if not issubclass(feature_cls, Feature):                                # type: ignore
+        if not issubclass(source_cls, Feature):                                # type: ignore
             raise TypeError(
-                f"Unable to build new feature: {feature_cls.__name__} must be "
+                f"Unable to build new feature: {source_cls.__name__} must be "
                 "a subclass of Feature"
             )
 
-        name = f"{cls.__name__}({feature_cls.__name__})"
+        name = (
+            f"{cls.__name__}({source_cls.__name__}"
+            f"{",".join(f",{k}={v}" for k, v in kwargs.items())})"
+        )
 
         if not target:
-            if feature_cls.TAG == Feature.Tag.TARGET:
+            if source_cls.TAG == Feature.Tag.TARGET:
                 raise ValueError(
                     f"Unable to build new feature: cannot tag {name} as a "
-                    f"predictor when it is derived from {feature_cls.__name__} "
+                    f"predictor when it is derived from {source_cls.__name__} "
                     "which is tagged as a target"
                 )
             tag = Feature.Tag.PREDICTOR
         else:
             tag = Feature.Tag.TARGET
 
-        source = feature_cls
+        source = source_cls
 
-        def compute(
+        def _compute(
             _cls: type[DerivedFeature],
             market_data: md.MarketData,
             cache: FeatureCache,
             out: md.Array,
         ) -> None:
-            feature_cls.compute(market_data, cache, out)
+            source_cls.compute(market_data, cache, out)
             cls.compute(out, **kwargs)                                          # type: ignore[attr-defined]
 
         return type(
@@ -68,6 +71,6 @@ class TransformMeta(OperatorMeta):
             {
                 "TAG": tag,
                 "SOURCE": source,
-                "compute": classmethod(compute)
+                "_compute": classmethod(_compute)
             }
         )
