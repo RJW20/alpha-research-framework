@@ -16,7 +16,7 @@ class RollingStd(Transform):
     @classmethod
     @override
     def compute(cls, arr: md.Array, *, lookback: int, **kwargs: Any) -> None:
-        RollingStd._rolling_std(arr, lookback)
+        RollingStd._rolling_std(arr, int(lookback))
 
     @staticmethod
     @njit
