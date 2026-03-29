@@ -108,11 +108,15 @@ def _release_storage(
     """
 
     if identifiers is None:
-        identifiers = storage.keys()
-    for identifier in identifiers:
-        arr = storage.pop(identifier)
-        if arr.filename:
-            os.remove(arr.filename)
+        while storage:
+            _, arr = storage.popitem()
+            if arr.filename:
+                os.remove(arr.filename)
+    else:
+        for identifier in identifiers:
+            arr = storage.pop(identifier)
+            if arr.filename:
+                os.remove(arr.filename)
 
 # ------------------------------------------------------------------------------
 # Market Data and Mask building
