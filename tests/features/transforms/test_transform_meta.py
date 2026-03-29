@@ -8,8 +8,8 @@ from alpha_research_framework.features.transforms.transform import Transform
 
 class TestTransformMetaCall(unittest.TestCase):
 
-    def test_feature_cls(self) -> None:
-        """Verify parent type of `feature_cls` asserted."""
+    def test_source_cls(self) -> None:
+        """Verify parent type of `source_cls` asserted."""
 
         class Identity(Transform):
             @classmethod
