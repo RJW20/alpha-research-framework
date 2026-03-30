@@ -9,7 +9,11 @@ def main():
     set_e2e_data_dir()
 
     loader = unittest.TestLoader()
-    suite = loader.discover(start_dir='tests', pattern='*.py')
+    suite = loader.discover(
+        start_dir='tests',
+        pattern='test*.py',
+        top_level_dir='.',
+    )
     
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
