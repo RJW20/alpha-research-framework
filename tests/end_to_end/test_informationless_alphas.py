@@ -5,15 +5,10 @@ from typing import override
 
 import numpy as np
 
-import alpha_research_framework.market_data as md
-from alpha_research_framework import (
-    Alpha,
-    EquityData,
-    Universe,
-    Window,
-    evaluate,
-)
-from alpha_research_framework.universe import CrossSection
+import alpha_research_framework as arf
+import alpha_research_framework.alphas as alphas
+import alpha_research_framework.cross_section as xs
+from alpha_research_framework.scalar import Scalar
 from tests.utils import (
     RegistryIsolatedTestCase,
     require_e2e_data_dir,
@@ -22,77 +17,94 @@ from tests.utils import (
 
 
 class TestInformationLessAlphas(RegistryIsolatedTestCase):
-    REGISTRY_OWNER = Alpha
+    REGISTRY_OWNER = arf.alphas.Alpha
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Require end-to-end directory and set up the universe."""
+    def setUp(self) -> None:
+        """Require end-to-end directory and create a temporary directory."""
 
-        data_path = require_e2e_data_dir()
-        equity_data = EquityData(data_path)
-        cls.tmp_dir = TemporaryDirectory()
-        cls.universe = Universe(Path(cls.tmp_dir.name), equity_data, 0, 0)
+        self.data_src = require_e2e_data_dir()
+        self._tmp_dir = TemporaryDirectory()
+        self.universe_path = Path(self._tmp_dir.name)
+
+    def tearDown(self) -> None:
+        self._tmp_dir.cleanup()
 
     def test_random_noise(self) -> None:
         """Verify IC for random signal is ~0 to 2 decimal places."""
 
-        class RandomNoise(Alpha):
-            """
-            Alpha that takes no inputs and gives a random signal per stock.
-            """
-
+        class RandomNoiseFactor(alphas.factors.Factor):
             __rng__ = np.random.default_rng(0)
-
-            ID = "random_noise"
-            CATEGORY = "testing"
-            DEPENDENCIES = set()
-            HORIZONS = set(Window)
-
+            REQUIRED_FEATURES = {arf.features.Price}
             @classmethod
             @override
-            def compute(cls, x: CrossSection) -> md.Array:
-                """`a_t ~ N[0,1]`"""
+            def compute(
+                cls,
+                x: xs.CrossSection,
+                cache: alphas.factors.FactorCache,
+            ) -> xs.Array:
                 return cls.__rng__.standard_normal(
-                    size=x["price"].shape
-                ).astype(md.Scalar)
+                    size=x[arf.features.Price].shape,
+                    dtype=Scalar,
+                )
 
-        result = evaluate(self.universe, [RandomNoise])
-        ic_df = result["information_coefficient"]
-        ic_mean = ic_df.mean()
+        class RandomNoise(alphas.Alpha):
+            ID = "random_noise"
+            CATEGORY = "testing"
+            SIGNAL = RandomNoiseFactor
+            HORIZONS = set(arf.Window)
+
+        universe = arf.build_universe_for(
+            [RandomNoise],
+            src=self.data_src,
+            path=self.universe_path,
+            liquidity_threshold=0,
+            mcap_threshold=0,
+        )
+
+        result = arf.evaluate(universe, [RandomNoise])
+        df = result[RandomNoise.ID]
+        df_mean = df.mean()
         np.testing.assert_array_almost_equal(
-            ic_mean.to_numpy(),
-            np.zeros(shape=ic_mean.shape),
+            df_mean.to_numpy(),
+            np.zeros(shape=df_mean.shape),
             decimal=2,
         )
 
     def test_constant(self) -> None:
         """Verify IC for constant signal is nan."""
 
-        class Constant(Alpha):
-            """Alpha that gives a signal of 1 for every stock."""
-
-            ID = "constant"
-            CATEGORY = "testing"
-            DEPENDENCIES = set()
-            HORIZONS = set(Window)
-
+        class ConstantFactor(alphas.factors.Factor):
+            REQUIRED_FEATURES = {arf.features.Price}
             @classmethod
             @override
-            def compute(cls, x: CrossSection) -> md.Array:
-                """`a_t = 1`"""
-                return np.ones_like(x["price"], dtype=md.Scalar)
+            def compute(
+                cls,
+                x: xs.CrossSection,
+                cache: alphas.factors.FactorCache,
+            ) -> xs.Array:
+                return np.ones_like(x[arf.features.Price], dtype=Scalar)
 
-        ic_df = evaluate(self.universe, [Constant])["information_coefficient"]
-        ic_mean = ic_df.mean()
-        np.testing.assert_array_almost_equal(
-            ic_mean.to_numpy(),
-            np.full_like(ic_mean, np.nan),
+        class Constant(alphas.Alpha):
+            ID = "constant"
+            CATEGORY = "testing"
+            SIGNAL = ConstantFactor
+            HORIZONS = set(arf.Window)
+
+        universe = arf.build_universe_for(
+            [Constant],
+            src=self.data_src,
+            path=self.universe_path,
+            liquidity_threshold=0,
+            mcap_threshold=0,
         )
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.universe = None
-        cls.tmp_dir.cleanup()
+        result = arf.evaluate(universe, [Constant])
+        df = result[Constant.ID]
+        df_mean = df.mean()
+        np.testing.assert_array_equal(
+            df_mean.to_numpy(),
+            np.full_like(df_mean, np.nan),
+        )
 
 
 if __name__ == "__main__":
