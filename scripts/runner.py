@@ -1,44 +1,27 @@
 from pathlib import Path
 
-from alpha_research_framework import Alpha, EquityData, Universe, Window, evaluate
-from alpha_research_framework.alphas import (
-    Momentum12To1,
-    Reversal1d,
-    Reversal5d,
-    RiskAdjustedReturns20d,
-    RiskAdjustedMomentum12To1,
-    Volatility20d,
-    Volatility12,
-)
-from alpha_research_framework.alphas.returns_based import ReturnsBased
+import pandas as pd
+
+import alpha_research_framework as arf
 
 SRC = Path("data")
 PATH = Path("universe")
 
 
-class Returns20d(ReturnsBased):
-
-    NAME = "returns_20d"
-    CATEGORY = "momentum/trend"
-
-    LOOKBACK = Window.MONTH
-    HORIZONS = {Window.DAY, Window.WEEK, Window.MONTH}
-
-
 def run() -> None:
 
-    equity_data = EquityData(SRC)
-    u = Universe(PATH, equity_data, 1e6, 1e8)
-    alphas: list[Alpha] = [
-        Reversal1d(), Reversal5d(),
-        Returns20d(),
-        Momentum12To1(),
-        Volatility20d(), Volatility12(),
-        RiskAdjustedReturns20d(), RiskAdjustedMomentum12To1()
+    pd.set_option('display.max_rows', None)
+
+    alphas = [
+        "reversal_1d", "reversal_5d",
+        "momentum_12m_1m", "risk_adjusted_momentum_12m_1m",
+        "volatility_20d",
     ]
-    result = evaluate(u, alphas)
-    ic_df = result["ic"]
-    print(ic_df.mean())
+    metrics = ["information_coefficient"]
+    u = arf.build_universe_for(alphas, src=SRC, path=PATH)
+    result = arf.evaluate(u, alphas, metrics)
+    for alpha in alphas:
+        print(alpha, '\n', result[alpha].mean())
 
 
 if __name__ == "__main__":

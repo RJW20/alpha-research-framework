@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
-import alpha_research_framework
+import alpha_research_framework as arf
 
 # -- defaults --
 DESTINATION = "data"
@@ -47,7 +47,7 @@ def download() -> None:
     with open(args.tickers, "r") as f:
         tickers = json.load(f)
 
-    alpha_research_framework.download(
+    arf.download(
         Path(args.destination),
         tickers,
         args.start_date,

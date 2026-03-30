@@ -3,7 +3,7 @@ import shutil
 from functools import partial
 from graphlib import TopologicalSorter
 from pathlib import Path
-from typing import Iterable, TypeVar
+from typing import Iterable, Sequence, TypeVar
 
 import numpy as np
 
@@ -254,7 +254,7 @@ def _build(
 # ------------------------------------------------------------------------------
 
 def build_universe_for(
-    alphas_: list[str | type[alphas.Alpha]],
+    alphas_: Sequence[str | type[alphas.Alpha]],
     *,
     src: Path,
     path: Path,
@@ -269,7 +269,7 @@ def build_universe_for(
     
     Parameters
     ----------
-    alphas_ : list[str | type[Alpha]]
+    alphas_ : Sequence[str | type[Alpha]]
         List of alphas wanting to be evaluated, given by either `ID` or type
         name. Available options include:
         - `"reversal_1d"` or `Reversal1d`
