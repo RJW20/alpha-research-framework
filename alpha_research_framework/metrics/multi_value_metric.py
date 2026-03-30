@@ -17,7 +17,6 @@ class MultiValueMetric(Metric, ClassVarValidator, register=False):
 
     Any subclass must define:
     - `ID`: `str` - unique identifier
-    - `MEASURE_GROUP`: `str` - umbrella term for the measures within the metric
     - `MEASURES`: `list[str]` - names of each measure
     - `compute(
         cls,
@@ -26,17 +25,13 @@ class MultiValueMetric(Metric, ClassVarValidator, register=False):
       ) -> npt.NDArray[np.floating]:` - classmethod for calculating the metric
     """
 
-    MEASURE_GROUP: ClassVar[str]
     MEASURES: ClassVar[list[str]]
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        """
-        Asserts definition, type and value of `MEASURE_GROUP` and `MEASURES`.
-        """
+        """Asserts definition, type and value of `MEASURES`."""
 
         super().__init_subclass__(**kwargs)
         
-        cls.assert_class_var(name="MEASURE_GROUP", type=str, bad_values={""})
         cls.assert_class_var_container(
             name="MEASURES",
             container_type=list,

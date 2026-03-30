@@ -15,7 +15,6 @@ class QuantilePorfolio(MultiValueMetric):
 
     ID = "quantile_portfolio"
 
-    MEASURE_GROUP = "quantiles"
     MEASURES = [f"Q{i+1}" for i in range(__quantiles__)]
     
     @classmethod

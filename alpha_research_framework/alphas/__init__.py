@@ -5,3 +5,4 @@ from .alphas import (
     Momentum20d, Momentum12m, Momentum12m1m, RiskAdjustedMomentum12m1m,
     Volatility20d, Volatility12m,
 )
+from . import factors
