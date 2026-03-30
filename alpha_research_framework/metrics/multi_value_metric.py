@@ -22,7 +22,7 @@ class MultiValueMetric(Metric, ClassVarValidator, register=False):
     - `compute(
         cls,
         signal: xs.Array,
-        future_returns: xs.Array,
+        forward_returns: xs.Array,
       ) -> npt.NDArray[np.floating]:` - classmethod for calculating the metric
     """
 
@@ -49,9 +49,9 @@ class MultiValueMetric(Metric, ClassVarValidator, register=False):
     def compute(
         cls,
         signal: xs.Array,
-        future_returns: xs.Array
+        forward_returns: xs.Array
     ) -> npt.NDArray[np.floating]:
         """
         Return values containing a measure of correlation between `signal` and
-        `future_returns`.
+        `forward_returns`.
         """

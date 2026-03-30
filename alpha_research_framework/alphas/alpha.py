@@ -36,8 +36,8 @@ class Alpha(
         """
         Asserts definition and type of `CATEGORY`, `SIGNAL` and `HORIZONS`,
         and configures `REQUIRED_FEATURES` as the union of
-        `SIGNAL.REQUIRED_FEATURES` and a set of `FutureReturns` features for all
-        `HORIZONS`.
+        `SIGNAL.REQUIRED_FEATURES` and a set of `ForwardReturns` features for
+        all `HORIZONS`.
         """
         
         cls.assert_class_var("CATEGORY", type=str, bad_values={""})
@@ -50,7 +50,7 @@ class Alpha(
 
         cls.REQUIRED_FEATURES = (                                               # type: ignore
             cls.SIGNAL.REQUIRED_FEATURES |
-            set(Alpha._windows_to_future_returns(*cls.HORIZONS))
+            set(Alpha._windows_to_forward_returns(*cls.HORIZONS))
         )
 
         super().__init_subclass__(**kwargs)
@@ -65,19 +65,20 @@ class Alpha(
         return cls.SIGNAL.compute(x, cache)
 
     @staticmethod
-    def _windows_to_future_returns(
+    def _windows_to_forward_returns(
         *windows: Window,
     ) -> tuple[type[features.Feature],...]:
         """
-        Return a `FutureReturns` feature pertaining to each window in `Windows`.
+        Return a `ForwardReturns` feature pertaining to each window in
+        `Windows`.
         """
 
-        window_to_future_returns = {
-            Window.DAY:         features.FutureReturns1d,
-            Window.WEEK:        features.FutureReturns5d,
-            Window.MONTH:       features.FutureReturns20d,
-            Window.QUARTER:     features.FutureReturns63d,
-            Window.HALF_YEAR:   features.FutureReturns126d,
-            Window.YEAR:        features.FutureReturns252d,
+        window_to_forward_returns = {
+            Window.DAY:         features.ForwardReturns1d,
+            Window.WEEK:        features.ForwardReturns5d,
+            Window.MONTH:       features.ForwardReturns20d,
+            Window.QUARTER:     features.ForwardReturns63d,
+            Window.HALF_YEAR:   features.ForwardReturns126d,
+            Window.YEAR:        features.ForwardReturns252d,
         }
-        return tuple(window_to_future_returns[window] for window in windows)
+        return tuple(window_to_forward_returns[window] for window in windows)

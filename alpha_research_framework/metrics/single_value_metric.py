@@ -12,14 +12,14 @@ class SingleValueMetric(Metric, register=False):
 
     Any subclass must define:
     - `ID`: `str` - unique identifier
-    - `compute(cls, signal: xs.Array, future_returns: xs.Array) -> float:` -
+    - `compute(cls, signal: xs.Array, forward_returns: xs.Array) -> float:` -
     classmethod for calculating the metric
     """
 
     @classmethod
     @abstractmethod
-    def compute(cls, signal: xs.Array, future_returns: xs.Array) -> float:
+    def compute(cls, signal: xs.Array, forward_returns: xs.Array) -> float:
         """
         Return a value containing a measure of correlation between `signal` and
-        `future_returns`.
+        `forward_returns`.
         """

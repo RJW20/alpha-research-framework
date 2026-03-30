@@ -24,9 +24,9 @@ class Metric(Operator, Registrable, registry_root=True):
     def compute(
         cls,
         signal: xs.Array,
-        future_returns: xs.Array
+        forward_returns: xs.Array
     ) -> float | npt.NDArray[np.floating]:
         """
         Return a value or values containing a measure of correlation between
-        `signal` and `future_returns`.
+        `signal` and `forward_returns`.
         """

@@ -43,32 +43,32 @@ Volatility252d = transforms.RollingStd(Returns1d, lookback=Window.YEAR)
 # Target Derivatives
 # ------------------------------------------------------------------------------
 
-FutureReturns1d = transforms.LeadDifference(
+ForwardReturns1d = transforms.LeadDifference(
     LogPrice,
     target=True,
     lead=Window.DAY,
 )
-FutureReturns5d = transforms.LeadDifference(
+ForwardReturns5d = transforms.LeadDifference(
     LogPrice,
     target=True,
     lead=Window.WEEK,
 )
-FutureReturns20d = transforms.LeadDifference(
+ForwardReturns20d = transforms.LeadDifference(
     LogPrice,
     target=True,
     lead=Window.MONTH,
 )
-FutureReturns63d = transforms.LeadDifference(
+ForwardReturns63d = transforms.LeadDifference(
     LogPrice,
     target=True,
     lead=Window.QUARTER,
 )
-FutureReturns126d = transforms.LeadDifference(
+ForwardReturns126d = transforms.LeadDifference(
     LogPrice,
     target=True,
     lead=Window.HALF_YEAR,
 )
-FutureReturns252d = transforms.LeadDifference(
+ForwardReturns252d = transforms.LeadDifference(
     LogPrice,
     target=True,
     lead=Window.YEAR,

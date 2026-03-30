@@ -23,22 +23,22 @@ class QuantilePorfolio(MultiValueMetric):
     def compute(
         cls,
         signal: xs.Array,
-        future_returns: xs.Array
+        forward_returns: xs.Array
     ) -> npt.NDArray[np.floating]:
         """
-        Return a `NumPy` array of average `future_returns` per quantile in
+        Return a `NumPy` array of average `forward_returns` per quantile in
         `signal`.
         """
 
-        valid = stats.extract_valid(signal, future_returns)
+        valid = stats.extract_valid(signal, forward_returns)
         if not valid:
             return np.full(cls.__quantiles__, np.nan)
-        signal_clean, future_returns_clean = valid
+        signal_clean, forward_returns_clean = valid
         
         q_idx = stats.quantile_indices(signal_clean, cls.__quantiles__)
         q_avg = stats.bucket_averages(
             q_idx,
-            future_returns_clean,
+            forward_returns_clean,
             cls.__quantiles__,
         )
         return q_avg

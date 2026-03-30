@@ -75,9 +75,10 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
                 SIGNAL = Dummy
                 HORIZONS = {1}
 
-    def test_required_features_future_returns(self) -> None:
+    def test_required_features_forward_returns(self) -> None:
         """
-        Verify `FutureReturns` dependency created for all windows in `HORIZONS`.
+        Verify `ForwardReturns` dependency created for all windows in
+        `HORIZONS`.
         """
 
         class Dummy(factors.Factor):
@@ -95,32 +96,32 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
         )
 
 
-class TestAlphaWindowsToFutureReturns(RegistryIsolatedTestCase):
+class TestAlphaWindowsToForwardReturns(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Alpha
 
-    def test_windows_to_future_returns(self) -> None:
+    def test_windows_to_forward_returns(self) -> None:
         """
-        Verify `FutureReturns` features are returned per group of `Window`s in
+        Verify `ForwardReturns` features are returned per group of `Window`s in
         the same order as passed.
         """
 
         N = len(Window)
 
         windows_fut_ret_pairs: list[tuple[Window, type[features.Feature]]] = [
-            (Window.DAY,        features.FutureReturns1d),
-            (Window.WEEK,       features.FutureReturns5d),
-            (Window.MONTH,      features.FutureReturns20d),
-            (Window.QUARTER,    features.FutureReturns63d),
-            (Window.HALF_YEAR,  features.FutureReturns126d),
-            (Window.YEAR,       features.FutureReturns252d),
+            (Window.DAY,        features.ForwardReturns1d),
+            (Window.WEEK,       features.ForwardReturns5d),
+            (Window.MONTH,      features.ForwardReturns20d),
+            (Window.QUARTER,    features.ForwardReturns63d),
+            (Window.HALF_YEAR,  features.ForwardReturns126d),
+            (Window.YEAR,       features.ForwardReturns252d),
         ]
         for n in range(1, N + 1):
             for pairs in combinations(windows_fut_ret_pairs, n):
                 windows = tuple(pair[0] for pair in pairs)
-                future_returns = tuple(pair[1] for pair in pairs)
+                forward_returns = tuple(pair[1] for pair in pairs)
                 self.assertTupleEqual(
-                    Alpha._windows_to_future_returns(*windows),
-                    future_returns,
+                    Alpha._windows_to_forward_returns(*windows),
+                    forward_returns,
                 )
 
 
