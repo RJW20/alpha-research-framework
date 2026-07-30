@@ -2,8 +2,6 @@ from typing import TypeAlias
 
 import numpy as np
 
-import alpha_research_framework.observables as observables
-
 Array: TypeAlias = np.memmap
 """
 Format for all stores of market-like data (observables and features).
@@ -15,11 +13,4 @@ feature is stored per `Array`.
 `shape` = `(T, N)` where:
 - `T` = number of trading days
 - `N` = number of tickers
-"""
-
-MarketData: TypeAlias = dict[type[observables.Observable], Array]
-"""
-3D representation of the stock market.
-
-Implemented as a mapping of `Observable` to `Array`.
 """
