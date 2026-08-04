@@ -1,11 +1,11 @@
 import unittest
 
 import alpha_research_framework.observables as observables
-from alpha_research_framework.features.feature import Feature
-from alpha_research_framework.features.primitive_feature import PrimitiveFeature
+from alpha_research_framework.series.observable_series import ObservableSeries
+from alpha_research_framework.series.series import Series
 
 
-class TestPrimitiveFeatureObservable(unittest.TestCase):
+class TestObservableSeriesObservable(unittest.TestCase):
      
     def test_class_var_assertion(self) -> None:
         """
@@ -13,16 +13,16 @@ class TestPrimitiveFeatureObservable(unittest.TestCase):
         """
 
         with self.assertRaises(AttributeError):
-            class NoObservable(PrimitiveFeature):
-                TAG = Feature.Tag.PREDICTOR
+            class NoObservable(ObservableSeries):
+                TAG = Series.Tag.PREDICTOR
         
         with self.assertRaises(TypeError):
-            class IncompatibleObservable(PrimitiveFeature):
-                TAG = Feature.Tag.PREDICTOR
+            class IncompatibleObservable(ObservableSeries):
+                TAG = Series.Tag.PREDICTOR
                 OBSERVABLE = str
 
 
-class TestPrimitiveFeatureCompute(unittest.TestCase):
+class TestObservableSeriesCompute(unittest.TestCase):
 
     def test_absent_observable(self) -> None:
         """
@@ -33,8 +33,8 @@ class TestPrimitiveFeatureCompute(unittest.TestCase):
         class DummyObservable(observables.Observable):
             NAME = "dummy"
 
-        class DummyPrimitive(PrimitiveFeature):
-            TAG = Feature.Tag.PREDICTOR
+        class DummyPrimitive(ObservableSeries):
+            TAG = Series.Tag.PREDICTOR
             OBSERVABLE = DummyObservable
 
         DummyPrimitive.compute({DummyObservable: []}, {}, [])
