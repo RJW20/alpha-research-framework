@@ -8,16 +8,16 @@ import alpha_research_framework.market_data as md
 from alpha_research_framework.class_var_validator import ClassVarValidator
 from alpha_research_framework.operator import Operator
 
-from .feature_cache import FeatureCache
+from .cache import Cache
 
 
-class Feature(Operator, ClassVarValidator):
+class Series(Operator, ClassVarValidator):
     """
-    Abstract base class for market features with automatic subclass validation.
+    Abstract base class for market series with automatic subclass validation.
 
-    Should not be directly subclassed - features may be created by subclassing
-    `PrimitiveFeature` or by transforming `Feature`s via application of
-    subclasses of `Transform` resulting in a `DerivedFeature`.
+    Should not be directly subclassed - series may be created by subclassing
+    `ObservableSeries` or by transforming already existing `Series` via
+    application of `transform` resulting in a `TransformedSeries`.
     """
 
     class Tag(IntEnum):
@@ -31,20 +31,21 @@ class Feature(Operator, ClassVarValidator):
         
         super().__init_subclass__(**kwargs)
         if not abstract:
-            cls.assert_class_var("TAG", type=Feature.Tag)
+            cls.assert_class_var("TAG", type=Series.Tag)
 
     @classmethod
     @abstractmethod
     def compute(
         cls,
         market_data: md.MarketData,
-        cache: FeatureCache,
-        out: md.Array,
-    ) -> None:
+        cache: Cache,
+        allocator: md.Allocator,
+    ) -> md.Array:
         """
-        Populate `out` with raw market feature value per stock per timestamp.
+        Return an `md.Array` with raw market series values per stock per
+        timestamp.
 
         Values are calculated from raw `market_data` and/or already computed
-        features stored in `cache`.
+        series stored in `cache`.
         """
         ...

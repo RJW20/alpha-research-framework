@@ -1,19 +1,19 @@
 import unittest
 
-from alpha_research_framework.features.feature import Feature
+from alpha_research_framework.series.series import Series
 
 
-class TestFeatureTag(unittest.TestCase):
+class TestSeriesTag(unittest.TestCase):
 
     def test_class_var_assertion(self) -> None:
         """Verify definition and type of `TAG` asserted when subclassing."""
 
         with self.assertRaises(AttributeError):
-            class NoTag(Feature):
+            class NoTag(Series):
                 pass
 
         with self.assertRaises(TypeError):
-            class IncompatibleTag(Feature):
+            class IncompatibleTag(Series):
                 TAG = 1
 
 
