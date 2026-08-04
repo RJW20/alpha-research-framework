@@ -117,8 +117,8 @@ class ClassVarValidator:
         prototype: FunctionType,
     ) -> None:
         """
-        Asserts that a class variable exists and takes the same number of
-        arguments as `prototype`.
+        Asserts that a class variable exists, is of `FunctionType` and takes the
+        same number of arguments as `prototype`.
         """
 
         cls.assert_class_var(name, type=FunctionType)

@@ -193,6 +193,15 @@ class TestAssertClassVarFunction(unittest.TestCase):
             ):
                 pass
 
+    def test_type(self) -> None:
+        """Verify type of function class var enforced."""
+
+        with self.assertRaises(TypeError):
+            class NeedsClassVarValidatedSubClass(
+                TestAssertClassVarFunction.NeedsClassVarFunctionValidated
+            ):
+                attr = 1
+
     def test_arguments(self) -> None:
         """Verify number of arguments of function class var enforced."""
 
