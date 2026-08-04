@@ -3,6 +3,6 @@ from typing import TYPE_CHECKING, TypeAlias
 import alpha_research_framework.market_data as md
 
 if TYPE_CHECKING:
-    from .feature import Feature
+    from .series import Series
 
-FeatureCache: TypeAlias = dict[type["Feature"], md.Array]
+Cache: TypeAlias = dict[type["Series"], md.Array]
