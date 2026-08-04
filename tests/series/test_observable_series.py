@@ -33,13 +33,13 @@ class TestObservableSeriesCompute(unittest.TestCase):
         class DummyObservable(observables.Observable):
             NAME = "dummy"
 
-        class DummyPrimitive(ObservableSeries):
+        class DummySeries(ObservableSeries):
             TAG = Series.Tag.PREDICTOR
             OBSERVABLE = DummyObservable
 
-        DummyPrimitive.compute({DummyObservable: []}, {}, [])
+        DummySeries.compute({DummyObservable: []}, {}, None)
         with self.assertRaises(ValueError):
-            DummyPrimitive.compute({}, {}, [])
+            DummySeries.compute({}, {}, None)
 
 
 if __name__ == "__main__":
