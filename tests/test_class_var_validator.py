@@ -1,5 +1,5 @@
 import unittest
-from typing import ClassVar
+from typing import Any, Callable, ClassVar
 
 from alpha_research_framework.class_var_validator import ClassVarValidator
 
@@ -51,24 +51,25 @@ class TestAssertClassVarSubType(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             class NeedsClassVarValidatedSubClass(
-                TestAssertClassVar.NeedsClassVarValidated
+                TestAssertClassVarSubType.NeedsClassVarValidated
             ):
                 pass
 
     def test_type(self) -> None:
         """Verify class var is a type enforced."""
 
-        class NeedsClassVarValidatedSubClass(
-                TestAssertClassVar.NeedsClassVarValidated
-            ):
-                attr = "a"
+        with self.assertRaises(TypeError):
+            class NeedsClassVarValidatedSubClass(
+                    TestAssertClassVarSubType.NeedsClassVarValidated
+                ):
+                    attr = "a"
 
     def test_base_type(self) -> None:
         """Verify base type of class var enforced."""
 
         with self.assertRaises(TypeError):
             class NeedsClassVarValidatedSubClass(
-                TestAssertClassVar.NeedsClassVarValidated
+                TestAssertClassVarSubType.NeedsClassVarValidated
             ):
                 attr = int
 
@@ -172,6 +173,34 @@ class TestAssertClassVarContainerOfSubType(unittest.TestCase):
                 .NeedsClassVarContainerValidated
             ):
                 attrs = {int}
+
+
+class TestAssertClassVarFunction(unittest.TestCase):
+
+    class NeedsClassVarFunctionValidated(ClassVarValidator):
+        attr: ClassVar[Callable[[Any, Any], Any]]
+        def __init_subclass__(cls) -> None:
+            def expected_attr(x: Any, y: Any) -> Any:
+                ...
+            cls.assert_class_var_function("attr", prototype=expected_attr)
+
+    def test_definition(self) -> None:
+        """Verify definition of function class var enforced."""
+
+        with self.assertRaises(AttributeError):
+            class NeedsClassVarValidatedSubClass(
+                TestAssertClassVarFunction.NeedsClassVarFunctionValidated
+            ):
+                pass
+
+    def test_arguments(self) -> None:
+        """Verify number of arguments of function class var enforced."""
+
+        with self.assertRaises(TypeError):
+            class NeedsClassVarValidatedSubClass(
+                TestAssertClassVarFunction.NeedsClassVarFunctionValidated
+            ):
+                attr = lambda x: x*2
 
 
 if __name__ == "__main__":

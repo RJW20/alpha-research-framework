@@ -1,3 +1,5 @@
+import inspect
+from types import FunctionType
 from typing import Any
 
 
@@ -106,3 +108,43 @@ class ClassVarValidator:
                     f"{cls.__name__}.{name} must exclusively contain "
                     f"subclasses of type {element_base_type.__name__}"
                 )
+
+    @classmethod
+    def assert_class_var_function(
+        cls,
+        name: str,
+        *,
+        prototype: FunctionType,
+    ) -> None:
+        """
+        Asserts that a class variable exists and takes the same number of
+        arguments as `prototype`.
+        """
+
+        cls.assert_class_var(name, type=FunctionType)
+
+        class_var = getattr(cls, name)
+        class_var_sig = inspect.signature(class_var)
+        prototype_sig = inspect.signature(prototype)
+        args: Any = []
+        kwargs: Any = {}
+        sentinel = object()
+        for param in prototype_sig.parameters.values():
+            match param.kind:
+                case inspect.Parameter.POSITIONAL_ONLY:
+                    args.append(sentinel)
+                case inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                    args.append(sentinel)
+                case inspect.Parameter.KEYWORD_ONLY:
+                    kwargs[param.name] = sentinel
+                case inspect.Parameter.VAR_POSITIONAL:
+                    args.extend([sentinel, sentinel])
+                case inspect.Parameter.VAR_KEYWORD:
+                    kwargs["dummy"] = sentinel
+        try:
+            class_var_sig.bind(*args, **kwargs)
+        except TypeError as e:
+            raise TypeError(
+                f"{cls.__name__}.{name} must be a function with signature shape"
+                f" matching {prototype.__name__}"
+            ) from e
