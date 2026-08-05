@@ -3,35 +3,38 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from alpha_research_framework.features.transforms.rolling_std import RollingStd
+from alpha_research_framework.series.transforms.rolling_std import rolling_std
+from tests.utils import random_array
 
 
 class TestRollingStd(unittest.TestCase):
 
-    def test_compute(self) -> None:
+    SIZE = (1000, 100)
+
+    def test_non_positive_lookback(self) -> None:
+        """Verify a `ValueError` is thrown when `lookback <=0`."""
+
+        arr = random_array(TestRollingStd.SIZE)
+        with self.assertRaises(ValueError):
+            rolling_std(arr, lookback=0)
+
+    def test_values(self) -> None:
         """
         Verify `arr` is modified to be the rolling standard deviation of itself.
 
         The result is compared to the `pandas` built-in `DataFrame` version.
         """
 
-        SIZE = (1000, 100)
-        rng = np.random.default_rng(0)
-
         for lookback in [1, 10, 100]:
 
-            arr = rng.uniform(size=SIZE)
-            nan_mask = rng.uniform(size=arr.shape) < 0.1
-            arr[nan_mask] = np.nan
-
+            arr = random_array(TestRollingStd.SIZE)
             expected = (
                 pd.DataFrame(arr)
                 .rolling(lookback, min_periods=1)
                 .std()
                 .to_numpy(dtype=np.float64)
             )
-            RollingStd.compute(arr, lookback=lookback)
-
+            rolling_std(arr, lookback=lookback)
             np.testing.assert_array_almost_equal(arr, expected)
 
 
