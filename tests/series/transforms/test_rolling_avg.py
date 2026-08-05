@@ -3,10 +3,20 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from alpha_research_framework.features.transforms.rolling_avg import RollingAvg
+from alpha_research_framework.series.transforms.rolling_avg import rolling_avg
+from tests.utils import random_array
 
 
 class TestRollingAvg(unittest.TestCase):
+
+    SIZE = (1000, 100)
+
+    def test_non_positive_lookback(self) -> None:
+        """Verify a `ValueError` is thrown when `lookback <=0`."""
+
+        arr = random_array(TestRollingAvg.SIZE)
+        with self.assertRaises(ValueError):
+            rolling_avg(arr, lookback=0)
 
     def test_compute(self) -> None:
         """
@@ -15,23 +25,16 @@ class TestRollingAvg(unittest.TestCase):
         The result is compared to the `pandas` built-in `DataFrame` version.
         """
 
-        SIZE = (1000, 100)
-        rng = np.random.default_rng(0)
-
         for lookback in [1, 10, 100]:
 
-            arr = rng.uniform(size=SIZE)
-            nan_mask = rng.uniform(size=arr.shape) < 0.1
-            arr[nan_mask] = np.nan
-
+            arr = random_array(TestRollingAvg.SIZE)
             expected = (
                 pd.DataFrame(arr)
                 .rolling(lookback, min_periods=1)
                 .mean()
                 .to_numpy(dtype=np.float64)
             )
-            RollingAvg.compute(arr, lookback=lookback)
-
+            rolling_avg(arr, lookback=lookback)
             np.testing.assert_array_almost_equal(arr, expected)
 
 
