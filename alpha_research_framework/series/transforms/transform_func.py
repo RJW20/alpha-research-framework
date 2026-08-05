@@ -1,10 +1,12 @@
 from collections.abc import Callable
 from typing import Any, TypeAlias
 
-import alpha_research_framework.market_data as md
+import numpy as np
+import numpy.typing as npt
 
 TransformFunc: TypeAlias = \
-    Callable[[md.Array], None] | Callable[[md.Array, Any], None]
+    Callable[[npt.NDArray[np.floating]], None] | \
+    Callable[[npt.NDArray[np.floating], Any], None]
 """
 Function signature for all market series transforms.
 
