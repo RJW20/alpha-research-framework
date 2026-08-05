@@ -1,5 +1,6 @@
 import unittest
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from alpha_research_framework.class_var_validator import ClassVarValidator
 

@@ -1,4 +1,5 @@
-from typing import Any, Callable, ClassVar, override
+from collections.abc import Callable
+from typing import Any, ClassVar, override
 
 import alpha_research_framework.market_data as md
 

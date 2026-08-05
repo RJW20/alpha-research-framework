@@ -1,5 +1,5 @@
 import inspect
-from types import FunctionType
+from collections.abc import Callable
 from typing import Any
 
 
@@ -114,14 +114,14 @@ class ClassVarValidator:
         cls,
         name: str,
         *,
-        prototype: FunctionType,
+        prototype: Callable[..., Any],
     ) -> None:
         """
         Asserts that a class variable exists, is of `FunctionType` and takes the
         same number of arguments as `prototype`.
         """
 
-        cls.assert_class_var(name, type=FunctionType)
+        cls.assert_class_var(name, type=Callable) # type: ignore
 
         class_var = getattr(cls, name)
         class_var_sig = inspect.signature(class_var)
