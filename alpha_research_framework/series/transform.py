@@ -1,16 +1,18 @@
 from functools import partial
-from typing import Any
+from typing import Any, ParamSpec
 
 from .series import Series
 from .transformed_series import TransformedSeries
 from .transforms import TransformFunc
+
+P = ParamSpec("P")
 
 
 def transform(
     source: type[Series],
     *,
     target: bool = False,
-    func: TransformFunc,
+    func: TransformFunc[P],
     **kwargs: Any,
 ) -> type[TransformedSeries]:
     """

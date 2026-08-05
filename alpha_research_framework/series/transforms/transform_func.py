@@ -1,15 +1,26 @@
-from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import ParamSpec, Protocol
 
 import numpy as np
 import numpy.typing as npt
 
-TransformFunc: TypeAlias = \
-    Callable[[npt.NDArray[np.floating]], None] | \
-    Callable[[npt.NDArray[np.floating], Any], None]
-"""
-Function signature for all market series transforms.
+P = ParamSpec("P")
 
-Only acts over the time axis (axis 0).
-Carries out the transformation in-place.
-"""
+
+class TransformFunc(Protocol[P]):
+    """
+    Function signature for all market series transforms.
+
+    Only acts over the time axis (axis 0).
+    Carries out the transformation in-place.
+    """
+
+    @property
+    def __name__(self) -> str:
+        ...
+
+    def __call__(
+        self, arr: npt.NDArray[np.floating],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> None:
+        ...
