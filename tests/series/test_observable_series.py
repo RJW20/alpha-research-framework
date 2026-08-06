@@ -26,8 +26,8 @@ class TestObservableSeriesCompute(unittest.TestCase):
 
     def test_absent_observable(self) -> None:
         """
-        Verify a `ValueError` is thrown only when the required observable is
-        absent from the market data.
+        Verify a `ValueError` is thrown only if the market data doesn't contain
+        `OBSERVABLE`.
         """
 
         class DummyObservable(observables.Observable):
@@ -40,6 +40,23 @@ class TestObservableSeriesCompute(unittest.TestCase):
         DummySeries.compute({DummyObservable: []}, {}, None)
         with self.assertRaises(ValueError):
             DummySeries.compute({}, {}, None)
+
+    def test_extracted_values(self) -> None:
+        """Verify values extracted from market pertain to `OBSERVABLE`."""
+
+        class DummyObservable(observables.Observable):
+            NAME = "dummy"
+
+        class DummySeries(ObservableSeries):
+            TAG = Series.Tag.PREDICTOR
+            OBSERVABLE = DummyObservable
+
+        dummy_values = ["a", "b"]
+        market_data = {DummyObservable: dummy_values}
+        self.assertListEqual(
+            DummySeries.compute(market_data, {}, None),
+            dummy_values,
+        )
 
 
 if __name__ == "__main__":

@@ -1,53 +1,49 @@
 from typing import Any, ClassVar, override
 
 import alpha_research_framework.cross_section as xs
-import alpha_research_framework.features as features
+import alpha_research_framework.series as series
 from alpha_research_framework.class_var_validator import ClassVarValidator
 
-from .factor import Factor
-from .factor_cache import FactorCache
+from .cache import Cache
+from .signal import Signal
 
 
-class PrimitiveFactor(Factor, ClassVarValidator, abstract=True):
+class SeriesSignal(Signal, ClassVarValidator, abstract=True):
     """
-    Abstract base class for factors whose values are read directly from the
-    cross-section with automatic subclass validation.
+    Abstract base class for cross-sectional signals whose values are read
+    directly from the cross-section with automatic subclass validation.
 
     Any concrete subclass must define:
-    - `FEATURE`: `type[features.Feature]`: feature extracted from the cross-
-    section
+    - `SERIES`: `type[series.Series]`: series extracted from the cross-section
     """
 
-    FEATURE: ClassVar[type[features.Feature]]
+    SERIES: ClassVar[type[series.Series]]
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        """
-        Asserts definition and type of `FEATURE` and creates `REQUIRED_FEATURES`
-        as a single-element set containing it.
-        """
+        """Asserts definition and type of `SERIES`."""
 
-        cls.assert_class_var_subtype("FEATURE", base_type=features.Feature)
-        cls.REQUIRED_FEATURES = {cls.FEATURE}
         super().__init_subclass__(**kwargs)
+        cls.assert_class_var_subtype("SERIES", base_type=series.Series)
 
     @classmethod
     @override
-    def compute(cls, x: xs.CrossSection, cache: FactorCache) -> xs.Array:
+    def compute(cls, cross_section: xs.CrossSection, cache: Cache) -> xs.Array:
         """
-        Return the raw data corresponding to `cls.FEATURE` from `x`.
+        Return a reference to the `xs.Array` pertaining to `SERIES` straight
+        from `cross_section`.
         
-        Raises a `ValueError` if the required feature is not present in the
+        Raises a `ValueError` if the required series is not present in the
         cross-section.
         """
 
         try:
-            return cls._compute(x)
+            return cls._compute(cross_section)
         except KeyError as e:
             raise ValueError(
-                f"Primitive factor {cls.__name__} could not be computed: cross-"
-                f"section missing required feature {cls.FEATURE.__name__}"
+                f"Cross-sectional series {cls.__name__} could not be computed: "
+                f"cross-section missing required series {cls.SERIES.__name__}"
             ) from e
     
     @classmethod
-    def _compute(cls, x: xs.CrossSection) -> xs.Array:
-        return x[cls.FEATURE]
+    def _compute(cls, cross_section: xs.CrossSection) -> xs.Array:
+        return cross_section[cls.SERIES]
