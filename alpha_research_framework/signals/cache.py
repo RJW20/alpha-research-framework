@@ -3,6 +3,6 @@ from typing import TYPE_CHECKING, TypeAlias
 import alpha_research_framework.cross_section as xs
 
 if TYPE_CHECKING:
-    from .factor import Factor
+    from .signal import Signal
 
-Cache: TypeAlias = dict[type["Factor"], xs.Array]
+Cache: TypeAlias = dict[type["Signal"], xs.Array]
