@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 import alpha_research_framework.cross_section as xs
-import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
+import alpha_research_framework.series as series
 
 from .calendar import Calendar
 
@@ -16,7 +16,7 @@ class Universe:
     Cross-sectional read-only universe backed by memory-mapped arrays.
 
     Holds a global calendar, time * stock market data (e.g. prices, volumes)
-    and calculated features, along with a time-varying in-universe mask.
+    and calculated series, along with a time-varying in-universe mask.
     Construction should be done via `build_universe`.
 
     Supports indexing via `[pd.Timestamp]`.
@@ -33,7 +33,7 @@ class Universe:
     shape: tuple[int, int]
     _calendar: Calendar
     _mask: np.memmap
-    _features: dict[type[features.Feature], md.Array]
+    _series: dict[type[series.Series], md.Array]
 
     @property
     def dates(self) -> pd.Index:
@@ -47,29 +47,29 @@ class Universe:
         t = self._calendar.t(key)
         """
         Return a tuple of `xs.CrossSection`s, containing `PREDICTOR`, `TARGET`
-        features for all stocks in-universe at the given timestamp.
+        series for all stocks in-universe at the given timestamp.
         """
 
         return (
-            self._cross_section(t, features.Feature.Tag.PREDICTOR),
-            self._cross_section(t, features.Feature.Tag.TARGET),
+            self._cross_section(t, series.Series.Tag.PREDICTOR),
+            self._cross_section(t, series.Series.Tag.TARGET),
         )
     
     def _cross_section(
         self,
         t: int,
-        tag: features.Feature.Tag,
+        tag: series.Series.Tag,
     ) -> xs.CrossSection:
         """
-        Return an `xs.CrossSection` containing all features with given `tag` for
+        Return an `xs.CrossSection` containing all series with given `tag` for
         all stocks in-universe at time `t`.
         """
 
         mask = self._mask[t, :]
         return xs.CrossSection(
             {
-                feature: values[t, mask]
-                for feature, values in self._features.items()
-                if feature.TAG == tag
+                series: values[t, mask]
+                for series, values in self._series.items()
+                if series.TAG == tag
             }
         )

@@ -1,56 +1,56 @@
 import unittest
 
-import alpha_research_framework.features as features
-from alpha_research_framework.universe.universe import Universe
-
 import numpy as np
+
+import alpha_research_framework.series as series
+from alpha_research_framework.universe.universe import Universe
 
 
 class TestUniverse(unittest.TestCase):
 
-    def test_cross_section_features(self) -> None:
+    def test_cross_section_series(self) -> None:
         """
-        Verify `_cross_section` returns all of the features with requested
+        Verify `_cross_section` returns all of the series with requested
         `tag`.
         """
 
-        class Predictor1(features.Feature):
-            TAG = features.Feature.Tag.PREDICTOR
+        class Predictor1(series.Series):
+            TAG = series.Series.Tag.PREDICTOR
             
-        class Predictor2(features.Feature):
-            TAG = features.Feature.Tag.PREDICTOR
+        class Predictor2(series.Series):
+            TAG = series.Series.Tag.PREDICTOR
 
         shape = (1, 1)
         mask = np.full(shape, True, dtype=bool)
-        features_ = {
+        series_ = {
             Predictor1: np.ones_like(mask),
             Predictor2: np.ones_like(mask),
         }
-        u = Universe(shape, None, mask, features_)
+        u = Universe(shape, None, mask, series_)
 
-        predictor_xs = u._cross_section(0, features.Feature.Tag.PREDICTOR)
+        predictor_xs = u._cross_section(0, series.Series.Tag.PREDICTOR)
         self.assertListEqual(
             list(predictor_xs.keys()),
             [Predictor1, Predictor2],
         )
 
-        target_xs = u._cross_section(0, features.Feature.Tag.TARGET)
+        target_xs = u._cross_section(0, series.Series.Tag.TARGET)
         self.assertEqual(len(target_xs), 0)
 
     def test_cross_sections_mask(self) -> None:
-        """Verify `_cross_section` masks features correctly."""
+        """Verify `_cross_section` masks series correctly."""
 
-        class Predictor(features.Feature):
-            TAG = features.Feature.Tag.PREDICTOR
+        class Predictor(series.Series):
+            TAG = series.Series.Tag.PREDICTOR
 
         T = 10
         shape = (T, T)
         mask = np.array([[False] * t + [True] * (T - t) for t in range(T)])
-        features_ = {Predictor: np.ones_like(mask)}
-        u = Universe(shape, None, mask, features_)
+        series_ = {Predictor: np.ones_like(mask)}
+        u = Universe(shape, None, mask, series_)
 
         for t in range(T):
-            predictor_xs = u._cross_section(t, features.Feature.Tag.PREDICTOR)
+            predictor_xs = u._cross_section(t, series.Series.Tag.PREDICTOR)
             self.assertEqual(len(predictor_xs[Predictor]), T - t)
 
 
