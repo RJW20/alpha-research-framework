@@ -5,4 +5,4 @@ import alpha_research_framework.cross_section as xs
 if TYPE_CHECKING:
     from .factor import Factor
 
-FactorCache: TypeAlias = dict[type["Factor"], xs.Array]
+Cache: TypeAlias = dict[type["Factor"], xs.Array]
