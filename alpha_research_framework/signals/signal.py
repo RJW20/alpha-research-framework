@@ -18,7 +18,7 @@ class Signal(Operator, ClassVarValidator, metaclass=SignalMeta):
     `*`, `/` resulting in a `CombinedSignal`/`NegatedSignal`.
     """
 
-    def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
     @classmethod

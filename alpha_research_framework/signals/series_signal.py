@@ -8,7 +8,7 @@ from .cache import Cache
 from .signal import Signal
 
 
-class SeriesSignal(Signal, ClassVarValidator, abstract=True):
+class SeriesSignal(Signal, ClassVarValidator):
     """
     Abstract base class for cross-sectional signals whose values are read
     directly from the cross-section with automatic subclass validation.

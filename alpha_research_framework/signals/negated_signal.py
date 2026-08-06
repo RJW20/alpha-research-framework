@@ -6,7 +6,7 @@ from .cache import Cache
 from .signal import Signal
 
 
-class NegatedSignal(Signal, abstract=True):
+class NegatedSignal(Signal):
     """
     Abstract base class for cross-sectional signals derived from negating other
     signals.

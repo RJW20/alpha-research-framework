@@ -7,7 +7,7 @@ from .cache import Cache
 from .signal import Signal
 
 
-class CombinedSignal(Signal, abstract=True):
+class CombinedSignal(Signal):
     """
     Abstract base class for cross-sectional signals derived from combinations of
     other signals.

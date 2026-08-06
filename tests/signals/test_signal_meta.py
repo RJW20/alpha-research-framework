@@ -1,6 +1,5 @@
 import operator
 import unittest
-from typing import Any, override
 
 from alpha_research_framework.signals.signal import Signal
 
@@ -14,7 +13,7 @@ class TestSignalMetaCombine(unittest.TestCase):
         Verify cannot combine with a type that does not inherit from `Signal`.
         """
 
-        class ValidSignal(Signal, abstract=True):
+        class ValidSignal(Signal):
             pass
 
         class InvalidSignal:
