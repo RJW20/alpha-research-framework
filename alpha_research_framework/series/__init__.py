@@ -1,7 +1,5 @@
 from .series import Series
 from .observable_series import ObservableSeries
-from .transformed_series import TransformedSeries
-from .combined_series import CombinedSeries
 from .definitions import (
     Open, High, Low, Close, Volume,
     LogClose,
