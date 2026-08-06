@@ -30,6 +30,9 @@ ignore = [
     "W293",     # White space on blank lines
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "E501", "I001"]
+
 [tool.poetry.scripts]
 download = "scripts.download:download"
 runner = "scripts.runner:run"
