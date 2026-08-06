@@ -4,10 +4,10 @@ import numpy as np
 
 Array: TypeAlias = np.memmap
 """
-Format for all stores of market-like data (observables and features).
+Format for all stores of market-like data (observables and series).
 
 Uses disk-backed storage in the form of a `NumPy` `memmap`. One observable or
-feature is stored per `Array`.
+series is stored per `Array`.
 
 `dtype` = `Scalar` \\
 `shape` = `(T, N)` where:
