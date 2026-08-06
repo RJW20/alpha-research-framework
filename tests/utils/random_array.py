@@ -5,6 +5,8 @@ import numpy.typing as npt
 
 ShapeLike: TypeAlias = int | tuple[int, ...]
 
+rng = np.random.default_rng(0)
+
 
 def random_array(
     size: ShapeLike,
@@ -16,10 +18,10 @@ def random_array(
     values in [0, 1).
 
     The array will have given `size`.
-    If `inc_nans` is set, 10% of the values in the array will be `np.nan`.
+    If `inc_nans` is set, approximately 10% of the values in the array will be
+    `np.nan`.
     """
 
-    rng = np.random.default_rng(0)
     arr = np.random.random(size)
     if inc_nans:
         nan_mask = rng.uniform(size=size) < 0.1

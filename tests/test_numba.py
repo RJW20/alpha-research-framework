@@ -1,21 +1,22 @@
 import timeit
 import unittest
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
 
-import alpha_research_framework.features.transforms as transforms
-import alpha_research_framework.market_data as md
 import alpha_research_framework.metrics.stats as stats
+import alpha_research_framework.series.transforms as transforms
 from alpha_research_framework.scalar import Scalar
+from tests.utils import random_array
 
 
 class TestNumba(unittest.TestCase):
     """
-    Class for testing speed-up of numba.njit optimised functions vs plain numpy
-    versions.
+    Class for testing speed-up of `numba.njit` optimised functions vs plain
+    `NumPy` versions.
     """
 
     RUNS_PER_FUNC = 100
@@ -37,7 +38,7 @@ class TestNumba(unittest.TestCase):
         Prints how many times faster.
         """
 
-        # compile numba function first
+        # Compile numba function first
         numba_func(*args, **kwargs)
 
         numba_runtime = TestNumba._time_function(
@@ -58,10 +59,51 @@ class TestNumba(unittest.TestCase):
         """
         n = TestNumba.RUNS_PER_FUNC
         return timeit.timeit(func, number=n) / n
+
+    def test_shift_forward(self) -> None:
+
+        def plain_shift_forward(
+            arr: npt.NDArray[np.floating],
+            period: int,
+        ) -> None:
+
+            arr = np.roll(arr, shift=period)
+            arr[:period] = np.nan
+
+        arr = random_array((TestNumba.T, TestNumba.N)).astype(Scalar)
+        period = 10
+        self._assert_numba_faster(
+            transforms.shift_forward,
+            plain_shift_forward,
+            arr,
+            period,
+        )
+
+    def test_shift_back(self) -> None:
+
+        def plain_shift_back(
+            arr: npt.NDArray[np.floating],
+            period: int,
+        ) -> None:
+
+            arr = np.roll(arr, shift=-period)
+            arr[-period:] = np.nan
+
+        arr = random_array((TestNumba.T, TestNumba.N)).astype(Scalar)
+        period = 10
+        self._assert_numba_faster(
+            transforms.shift_back,
+            plain_shift_back,
+            arr,
+            period,
+        )
     
     def test_rolling_average(self) -> None:
 
-        def plain_rolling_avg(arr: md.Array, lookback: int) -> None:
+        def plain_rolling_avg(
+            arr: npt.NDArray[np.floating],
+            lookback: int,
+        ) -> None:
             
             arr_clean = np.nan_to_num(arr, nan=0.0)
             csum = np.cumsum(arr_clean, axis=0)
@@ -75,13 +117,18 @@ class TestNumba(unittest.TestCase):
             rolling_count[:lookback] = ccount[:lookback]
             rolling_count[lookback:] = ccount[lookback:] - ccount[:-lookback]
 
-            arr[:] = rolling_sum / rolling_count
+            np.divide(
+                rolling_sum,
+                rolling_count,
+                out=arr,
+                where=rolling_count != 0
+            )
+            arr[rolling_count == 0] = np.nan
 
-        rng = np.random.default_rng(0)
-        arr = rng.uniform(0, 10, (TestNumba.T, TestNumba.N)).astype(Scalar)
+        arr = (random_array((TestNumba.T, TestNumba.N)) * 10).astype(Scalar)
         lookback = 20
         self._assert_numba_faster(
-            transforms.RollingAvg._rolling_avg,
+            transforms.rolling_avg,
             plain_rolling_avg,
             arr,
             lookback,
@@ -89,7 +136,10 @@ class TestNumba(unittest.TestCase):
 
     def test_rolling_std(self) -> None:
 
-        def plain_rolling_std(arr: md.Array, lookback: int) -> None:
+        def plain_rolling_std(
+            arr: npt.NDArray[np.floating],
+            lookback: int,
+        ) -> None:
             
             arr_clean = np.nan_to_num(arr, nan=0.0)
 
@@ -109,14 +159,27 @@ class TestNumba(unittest.TestCase):
             rolling_count[:lookback] = ccount[:lookback]
             rolling_count[lookback:] = ccount[lookback:] - ccount[:-lookback]
 
-            arr[:] = np.sqrt((rolling_sum2 - np.square(rolling_sum) / rolling_count) / (rolling_count - 1))
+            np.divide(
+                rolling_sum2 - np.square(rolling_sum),
+                rolling_count,
+                out=arr,
+                where=rolling_count != 0,
+            )
+            arr[rolling_count == 0] = np.nan
+            np.sqrt(arr, out=arr, where=arr > 0)
+            arr[arr < 0] = np.nan
+            np.divide(
+                arr,
+                rolling_count - 1,
+                out=arr,
+                where=rolling_count > 1,
+            )
             arr[rolling_count < 2] = np.nan
 
-        rng = np.random.default_rng(0)
-        arr = rng.uniform(0, 10, (TestNumba.T, TestNumba.N)).astype(Scalar)
+        arr = (random_array((TestNumba.T, TestNumba.N)) * 10).astype(Scalar)
         lookback = 20
         self._assert_numba_faster(
-            transforms.RollingStd._rolling_std,
+            transforms.rolling_std,
             plain_rolling_std,
             arr,
             lookback,
@@ -133,9 +196,8 @@ class TestNumba(unittest.TestCase):
             else:
                 return np.nan
             
-        rng = np.random.default_rng(0)
-        x = rng.uniform(0, TestNumba.N, TestNumba.N)
-        y = rng.uniform(0, TestNumba.N, TestNumba.N)
+        x = random_array(TestNumba.N) * TestNumba.N
+        y = random_array(TestNumba.N) * TestNumba.N
         self._assert_numba_faster(
             stats.pearson_scalar,
             plain_pearson_scalar,
