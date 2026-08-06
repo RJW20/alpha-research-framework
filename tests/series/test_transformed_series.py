@@ -1,6 +1,8 @@
 import unittest
 from typing import Any, override
 
+import numpy as np
+
 from alpha_research_framework.series.series import Series
 from alpha_research_framework.series.transformed_series import TransformedSeries
 from tests.utils import MockMdAllocator
@@ -64,13 +66,11 @@ class TestTransformedSeriesCompute(unittest.TestCase):
                 market_data: Any,
                 cache: Any,
                 allocator: MockMdAllocator,
-            ) -> list[int]:
-                arr = allocator.allocate(None)
-                arr = [i for i, a in enumerate(arr)]
-                return arr
+            ) -> np.ndarray:
+                return np.arange(allocator.SIZE)
 
-        def square(arr: list[int]) -> None:
-            arr[:] = [x**2 for x in arr]
+        def square(arr: np.ndarray) -> None:
+            arr[:] = np.square(arr)
 
         class Transformed(TransformedSeries):
             TAG = Series.Tag.PREDICTOR
@@ -78,7 +78,10 @@ class TestTransformedSeriesCompute(unittest.TestCase):
             TRANSFORM = square
 
         result = Transformed._compute({}, {}, MockMdAllocator)
-        self.assertEqual(result, [x**2 for x in range(MockMdAllocator.SIZE)])
+        np.testing.assert_array_equal(
+            result,
+            [x**2 for x in range(MockMdAllocator.SIZE)],
+        )
 
 
 if __name__ == "__main__":

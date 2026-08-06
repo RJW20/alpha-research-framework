@@ -1,3 +1,4 @@
+import numpy as np
 
 
 class MockMdAllocator:
@@ -5,5 +6,5 @@ class MockMdAllocator:
     SIZE = 5
 
     @staticmethod
-    def allocate(identifier: str) -> list[int]:
-        return [0] * MockMdAllocator.SIZE
+    def allocate(identifier: str) -> np.ndarray:
+        return np.zeros(MockMdAllocator.SIZE)
