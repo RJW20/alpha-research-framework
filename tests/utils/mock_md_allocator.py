@@ -8,3 +8,7 @@ class MockMdAllocator:
     @staticmethod
     def allocate(identifier: str) -> np.ndarray:
         return np.zeros(MockMdAllocator.SIZE)
+
+    @staticmethod
+    def release(arr: np.ndarray) -> None:
+        pass
