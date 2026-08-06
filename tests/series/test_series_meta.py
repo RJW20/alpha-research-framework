@@ -55,8 +55,8 @@ class TestSeriesMetaCombine(unittest.TestCase):
 
     def test_return_sources(self) -> None:
         """
-        Verify returned `TransformedSeries`' `SOURCE_LEFT` and `SOURCE_RIGHT`
-        are set as the `Series` that are transformed.
+        Verify returned `CombinedSeries`' `SOURCE_LEFT` and `SOURCE_RIGHT`
+        are set as the `Series` that are combined.
         """
 
         class Left(Series):
@@ -72,7 +72,7 @@ class TestSeriesMetaCombine(unittest.TestCase):
 
     def test_return_binary_op(self) -> None:
         """
-        Verify returned `TransformedSeries.BINARY_OP` is set as correct
+        Verify returned `CombinedSeries.BINARY_OP` is set as correct
         `operator`.
         """
 

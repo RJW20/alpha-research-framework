@@ -7,9 +7,9 @@ from alpha_research_framework.scalar import Scalar
 
 Array: TypeAlias = npt.NDArray[Scalar]
 """
-Format for all stores of cross-sectional data (series, factors and alphas).
+Format for all stores of cross-sectional data (series, signals and alphas).
 
-One series, factor or alpha is stored per `Array`.
+One series, signal or alpha is stored per `Array`.
 
 `dtype` = `Scalar` \\
 `shape` = `(N,)` where:

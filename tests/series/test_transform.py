@@ -40,14 +40,14 @@ class TestTransform(unittest.TestCase):
         is transformed.
         """
 
-        class Base(Series):
+        class Source(Series):
             TAG = Series.Tag.PREDICTOR
 
         def identity(arr: md.Array) -> None:
             pass
 
-        Transformed = transform(Base, func=identity)
-        self.assertEqual(Transformed.SOURCE, Base)
+        Transformed = transform(Source, func=identity)
+        self.assertEqual(Transformed.SOURCE, Source)
 
     def test_return_transform(self) -> None:
         """

@@ -14,8 +14,8 @@ class Signal(Operator, ClassVarValidator, metaclass=SignalMeta):
     Abstract base class for cross-sectional signals.
 
     Should not be directly subclassed - signals may be created by subclassing
-    `SeriesSignal` or combining `Signals`s via the operators `+`, `-`, `*`,
-    `/` resulting in a `CombinedSignal`.
+    `SeriesSignal` or combining/negating `Signals`s via the operators `+`, `-`,
+    `*`, `/` resulting in a `CombinedSignal`/`NegatedSignal`.
     """
 
     def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
