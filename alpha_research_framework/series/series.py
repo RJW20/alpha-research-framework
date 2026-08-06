@@ -9,15 +9,17 @@ from alpha_research_framework.class_var_validator import ClassVarValidator
 from alpha_research_framework.operator import Operator
 
 from .cache import Cache
+from .series_meta import SeriesMeta
 
 
-class Series(Operator, ClassVarValidator):
+class Series(Operator, ClassVarValidator, metaclass=SeriesMeta):
     """
     Abstract base class for market series with automatic subclass validation.
 
     Should not be directly subclassed - series may be created by subclassing
-    `ObservableSeries` or by transforming already existing `Series` via
-    application of `transform` resulting in a `TransformedSeries`.
+    `ObservableSeries` or by transforming/combining already existing `Series`
+    via application of `transform` resulting in a `TransformedSeries` or +, -,
+    *, / between two resulting in a `CombinedSeries`.
     """
 
     class Tag(IntEnum):

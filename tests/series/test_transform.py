@@ -1,5 +1,4 @@
 import unittest
-from typing import Any, override
 
 import alpha_research_framework.market_data as md
 from alpha_research_framework.series.series import Series
