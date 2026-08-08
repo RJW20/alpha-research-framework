@@ -267,7 +267,7 @@ def build_universe_for(
     xs_series = \
         _deduce_cross_sectional_series(
             [a.SIGNAL for a in resolved_alphas]
-        ) and \
+        ) | \
         _deduce_forward_returns_series(
             set().union(*[a.HORIZONS for a in resolved_alphas])                 # type: ignore
         )
@@ -304,7 +304,13 @@ def build_universe_for(
         allocator=allocator,
     )
 
-    for arr in set(market_data.values()) - set(series_.values()):
+    referenced_observables = {id(arr) for arr in series_.values()}
+    unreferenced_observables = {
+        o: arr
+        for o, arr in market_data.items()
+        if id(arr) not in referenced_observables
+    }
+    for arr in unreferenced_observables.values():
         allocator.release(arr)
 
     return Universe(shape, calendar, mask, series_)
