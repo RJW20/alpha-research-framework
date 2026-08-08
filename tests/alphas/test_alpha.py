@@ -1,9 +1,6 @@
 import unittest
-from itertools import combinations
 
-import alpha_research_framework.alphas.factors as factors
-import alpha_research_framework.features as features
-from alpha_research_framework import Window
+import alpha_research_framework.signals as signals
 from alpha_research_framework.alphas import Alpha
 from tests.utils import RegistryIsolatedTestCase
 
@@ -41,7 +38,7 @@ class TestAlphaSignal(RegistryIsolatedTestCase):
             class IncompatibleSignal(Alpha):
                 ID = "incompatible_signal"
                 CATEGORY = "testing_signal"
-                SIGNAL = features.Feature
+                SIGNAL = str
 
 
 class TestAlphaHorizons(RegistryIsolatedTestCase):
@@ -52,8 +49,8 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
         Verify definition and type of `HORIZONS` asserted when subclassing.
         """
 
-        class Dummy(factors.Factor):
-            REQUIRED_FEATURES = set()
+        class Dummy(signals.Signal):
+            pass
 
         with self.assertRaises(AttributeError):
             class NoHorizons(Alpha):
@@ -74,55 +71,6 @@ class TestAlphaHorizons(RegistryIsolatedTestCase):
                 CATEGORY = "testing_horizons"
                 SIGNAL = Dummy
                 HORIZONS = {1}
-
-    def test_required_features_forward_returns(self) -> None:
-        """
-        Verify `ForwardReturns` dependency created for all windows in
-        `HORIZONS`.
-        """
-
-        class Dummy(factors.Factor):
-            REQUIRED_FEATURES = set()
-
-        class WithHorizons(Alpha):
-            ID = "with_horizons"
-            CATEGORY = "testing_horizons"
-            SIGNAL = Dummy
-            HORIZONS = set(Window)
-
-        self.assertEqual(
-            len(WithHorizons.REQUIRED_FEATURES),
-            len(Dummy.REQUIRED_FEATURES) + len(Window)
-        )
-
-
-class TestAlphaWindowsToForwardReturns(RegistryIsolatedTestCase):
-    REGISTRY_OWNER = Alpha
-
-    def test_windows_to_forward_returns(self) -> None:
-        """
-        Verify `ForwardReturns` features are returned per group of `Window`s in
-        the same order as passed.
-        """
-
-        N = len(Window)
-
-        windows_fut_ret_pairs: list[tuple[Window, type[features.Feature]]] = [
-            (Window.DAY,        features.ForwardReturns1d),
-            (Window.WEEK,       features.ForwardReturns5d),
-            (Window.MONTH,      features.ForwardReturns20d),
-            (Window.QUARTER,    features.ForwardReturns63d),
-            (Window.HALF_YEAR,  features.ForwardReturns126d),
-            (Window.YEAR,       features.ForwardReturns252d),
-        ]
-        for n in range(1, N + 1):
-            for pairs in combinations(windows_fut_ret_pairs, n):
-                windows = tuple(pair[0] for pair in pairs)
-                forward_returns = tuple(pair[1] for pair in pairs)
-                self.assertTupleEqual(
-                    Alpha._windows_to_forward_returns(*windows),
-                    forward_returns,
-                )
 
 
 if __name__ == "__main__":

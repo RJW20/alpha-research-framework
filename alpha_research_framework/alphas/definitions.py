@@ -1,7 +1,14 @@
+import alpha_research_framework.signals as signals
 from alpha_research_framework.window import Window
 
-from . import factors
 from .alpha import Alpha
+
+# ---------------------------------- Notes -------------------------------------
+# Contained here is a full definition of all built-in Alphas that this library
+# provides.
+# For information on creating custom Alphas see the "Alphas" section of the
+# documentation.
+# ---------------------------------- Notes -------------------------------------
 
 # ------------------------------------------------------------------------------
 # Short Term Reversal
@@ -15,7 +22,7 @@ class Reversal1d(Alpha):
     """
     ID = "reversal_1d"
     CATEGORY = "short_term_reversal"
-    SIGNAL = -factors.Returns1d
+    SIGNAL = -signals.Returns1d
     HORIZONS = {Window.DAY, Window.WEEK}
 
 class Reversal5d(Alpha):
@@ -25,7 +32,7 @@ class Reversal5d(Alpha):
     """
     ID = "reversal_5d"
     CATEGORY = "short_term_reversal"
-    SIGNAL = -factors.Returns5d
+    SIGNAL = -signals.Returns5d
     HORIZONS = {Window.DAY, Window.WEEK}
     
 # ------------------------------------------------------------------------------
@@ -40,7 +47,7 @@ class Momentum20d(Alpha):
     """
     ID = "momentum_20d"
     CATEGORY = "momentum"
-    SIGNAL = factors.Returns20d
+    SIGNAL = signals.Returns20d
     HORIZONS = {Window.DAY, Window.WEEK, Window.MONTH}
 
 class Momentum12m(Alpha):
@@ -50,7 +57,7 @@ class Momentum12m(Alpha):
     """
     ID = "momentum_12m"
     CATEGORY = "momentum"
-    SIGNAL = factors.Returns252d
+    SIGNAL = signals.Returns252d
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
 
 class Momentum12m1m(Alpha):
@@ -60,7 +67,7 @@ class Momentum12m1m(Alpha):
     """
     ID = "momentum_12m_1m"
     CATEGORY = "momentum"
-    SIGNAL = factors.Returns252d - factors.Returns20d
+    SIGNAL = signals.Returns252d - signals.Returns20d
     SKIP = Window.MONTH
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
 
@@ -71,7 +78,7 @@ class RiskAdjustedMomentum12m1m(Alpha):
     """
     ID = "risk_adjusted_momentum_12m_1m"
     CATEGORY = "momentum"
-    SIGNAL = (factors.Returns252d - factors.Returns20d) / factors.Volatility252d
+    SIGNAL = (signals.Returns252d - signals.Returns20d) / signals.Volatility252d
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
 
 # ------------------------------------------------------------------------------
@@ -86,7 +93,7 @@ class Volatility20d(Alpha):
     """
     ID = "volatility_20d"
     CATEGORY = "volatility"
-    SIGNAL = -factors.Volatility20d
+    SIGNAL = -signals.Volatility20d
     HORIZONS = {Window.DAY, Window.WEEK, Window.MONTH}
 
 class Volatility12m(Alpha):
@@ -96,5 +103,5 @@ class Volatility12m(Alpha):
     """
     ID = "volatility_12m"
     CATEGORY = "volatility"
-    SIGNAL = -factors.Volatility252d
+    SIGNAL = -signals.Volatility252d
     HORIZONS = {Window.MONTH, Window.QUARTER, Window.HALF_YEAR, Window.YEAR}
