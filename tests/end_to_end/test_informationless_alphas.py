@@ -6,7 +6,6 @@ from typing import override
 import numpy as np
 
 import alpha_research_framework as arf
-import alpha_research_framework.alphas as alphas
 import alpha_research_framework.cross_section as xs
 from alpha_research_framework.scalar import Scalar
 from tests.utils import (
@@ -32,25 +31,25 @@ class TestInformationLessAlphas(RegistryIsolatedTestCase):
     def test_random_noise(self) -> None:
         """Verify IC for random signal is ~0 to 2 decimal places."""
 
-        class RandomNoiseFactor(alphas.factors.Factor):
+        class RandomNoiseSignal(arf.signals.SeriesSignal):
             __rng__ = np.random.default_rng(0)
-            REQUIRED_FEATURES = {arf.features.Price}
+            SERIES = arf.series.Close
             @classmethod
             @override
             def compute(
                 cls,
-                x: xs.CrossSection,
-                cache: alphas.factors.FactorCache,
+                cross_section: xs.CrossSection,
+                cache: arf.signals.Cache,
             ) -> xs.Array:
                 return cls.__rng__.standard_normal(
-                    size=x[arf.features.Price].shape,
+                    size=cross_section[arf.series.Close].shape,
                     dtype=Scalar,
                 )
 
-        class RandomNoise(alphas.Alpha):
+        class RandomNoise(arf.alphas.Alpha):
             ID = "random_noise"
             CATEGORY = "testing"
-            SIGNAL = RandomNoiseFactor
+            SIGNAL = RandomNoiseSignal
             HORIZONS = set(arf.Window)
 
         universe = arf.build_universe_for(
@@ -73,21 +72,24 @@ class TestInformationLessAlphas(RegistryIsolatedTestCase):
     def test_constant(self) -> None:
         """Verify IC for constant signal is nan."""
 
-        class ConstantFactor(alphas.factors.Factor):
-            REQUIRED_FEATURES = {arf.features.Price}
+        class ConstantSignal(arf.signals.SeriesSignal):
+            SERIES = arf.series.Close
             @classmethod
             @override
             def compute(
                 cls,
-                x: xs.CrossSection,
-                cache: alphas.factors.FactorCache,
+                cross_section: xs.CrossSection,
+                cache: arf.signals.Cache,
             ) -> xs.Array:
-                return np.ones_like(x[arf.features.Price], dtype=Scalar)
+                return np.ones_like(
+                    cross_section[arf.series.Close],
+                    dtype=Scalar,
+                )
 
-        class Constant(alphas.Alpha):
+        class Constant(arf.alphas.Alpha):
             ID = "constant"
             CATEGORY = "testing"
-            SIGNAL = ConstantFactor
+            SIGNAL = ConstantSignal
             HORIZONS = set(arf.Window)
 
         universe = arf.build_universe_for(

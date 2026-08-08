@@ -24,7 +24,7 @@ def set_e2e_data_dir() -> None:
     sys.argv = [sys.argv[0]] + remaining
 
 
-def require_e2e_data_dir():
+def require_e2e_data_dir() -> Path:
     """
     Get environment variable E2E_DATA_DIR.
     
