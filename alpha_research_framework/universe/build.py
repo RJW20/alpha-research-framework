@@ -1,16 +1,14 @@
-import os
-import shutil
 from functools import partial
-from graphlib import TopologicalSorter
 from pathlib import Path
-from typing import Iterable, Sequence, TypeVar
+from typing import Iterable, Sequence
 
 import numpy as np
 
 import alpha_research_framework.alphas as alphas
-import alpha_research_framework.features as features
 import alpha_research_framework.market_data as md
 import alpha_research_framework.observables as observables
+import alpha_research_framework.series as series
+import alpha_research_framework.signals as signals
 from alpha_research_framework.download.metadata import TickerInfo
 from alpha_research_framework.registrable import resolve
 from alpha_research_framework.scalar import Scalar
@@ -22,101 +20,86 @@ from .sector import Industry, Sector
 from .universe import Universe
 
 # ------------------------------------------------------------------------------
-# Feature/Observable deduction
+# Series/Observable deduction
 # ------------------------------------------------------------------------------
 
-def _deduce_cross_sectional_features(
-    alphas: Iterable[type[alphas.Alpha]],
-) -> set[type[features.Feature]]:
+def _deduce_cross_sectional_series(
+    signals_: Iterable[type[signals.Signal]],
+) -> set[type[series.Series]]:
     """
-    Return a set containing all the features that are required in a cross-
-    section to compute every alpha in `alphas`.
-    """
-
-    xs_features: set[type[features.Feature]] = set()
-    xs_features = xs_features.union(*[a.REQUIRED_FEATURES for a in alphas])
-    return xs_features
-
-def _scan_feature_tree(
-    features_: Iterable[type[features.Feature]],
-) -> tuple[set[type[observables.Observable]], set[type[features.Feature]]]:
-    """
-    Return 2 sets containing all features present in the reverse linked
-    lists defined by `DerivedFeature.SOURCE` and all observables defined by
-    `PrimitiveFeature.OBSERVABLE` at the heads of those lists.
+    Return a set containing all the `Series` that are required in a cross-
+    section to compute every `Signal` in `signals_`.
     """
 
-    observable_set: set[type[observables.Observable]] = set()
-    feature_set: set[type[features.Feature]] = set()
-    for feature in features_:
-        current = feature
-        while current not in feature_set:
-            feature_set.add(current)
-            if issubclass(current, features.DerivedFeature):
-                current = current.SOURCE
-            else:
-                observable_set.add(current.OBSERVABLE)                      # type: ignore
-                break
-    return observable_set, feature_set
+    visited_signals: set[type[signals.Signal]] = set()
+    series_set: set[type[series.Series]] = set()
 
-# ------------------------------------------------------------------------------
-# Disk management
-# ------------------------------------------------------------------------------
+    def find_root(node: type[signals.Signal]) -> None:
+        if node in visited_signals:
+            return
+        visited_signals.add(node)
+        try: # Maybe its a SeriesSignal
+            series_set.add(node.SERIES)                                         # type: ignore
+        except AttributeError:
+            try: # Maybe its a NegatedSignal
+                find_root(node.SOURCE)                                          # type: ignore
+            except AttributeError:
+                # Must be a CombinedSignal
+                find_root(node.SOURCE_LEFT)                                     # type: ignore
+                find_root(node.SOURCE_RIGHT)                                    # type: ignore
 
-def _make_fresh_directory(path: Path) -> None:
+    for s in signals_:
+        find_root(s)
+
+    return series_set
+
+def _deduce_forward_returns_series(
+    horizons: Iterable[Window]
+) -> set[type[series.Series]]:
     """
-    Remove any file or directory `path` refers to and then create a new
-    directory.
-    """
-
-    shutil.rmtree(path, ignore_errors=True)
-    path.mkdir(parents=True)
-
-T = TypeVar('T')
-def _allocate_storage(
-    identifiers: Iterable[type[T]],
-    *,
-    path: Path,
-    shape: tuple[int, int],
-) -> dict[type[T], md.Array]:
-    """
-    Return a dictionary containing a mapping from `identifier` to a new
-    `md.Array` at `path/{identifier.__name__}.dat` with given `shape` for
-    every `identifier` in `identifiers`.
+    Return a set containing all the forward returns `Series` that pertain to
+    a `Window` in `horizons`.
     """
 
-    return {
-        i: np.memmap(
-            path / f"{i.__name__}.dat",
-            dtype=Scalar,
-            mode="w+",
-            shape=shape,
-        )
-        for i in identifiers
+    window_to_forward_returns = {
+        Window.DAY:         series.ForwardReturns1d,
+        Window.WEEK:        series.ForwardReturns5d,
+        Window.MONTH:       series.ForwardReturns20d,
+        Window.QUARTER:     series.ForwardReturns63d,
+        Window.HALF_YEAR:   series.ForwardReturns126d,
+        Window.YEAR:        series.ForwardReturns252d,
     }
+    return set(window_to_forward_returns[h] for h in horizons)
 
-def _release_storage(
-    storage: dict[type[T], md.Array],
-    *,
-    identifiers: Iterable[type[T]] | None = None,
-) -> None:
+def _deduce_market_data_observables(
+    series_: Iterable[type[series.Series]],
+) -> set[type[observables.Observable]]:
     """
-    Remove the `identifier` and release its corresponding `md.Array` for every
-    `identifier` in `identifiers`.
-
-    If `identifiers` is not given then the entire `storage` will be released.
+    Return a set containing all the `Observable`s that are required in the
+    market data to compute every `Series` in `series_`.
     """
 
-    if identifiers is None:
-        while storage:
-            _, arr = storage.popitem()
-            if arr.filename:
-                os.remove(arr.filename)
-    else:
-        for identifier in identifiers:
-            arr = storage.pop(identifier)
-            if arr.filename:
-                os.remove(arr.filename)
+    visited_series: set[type[series.Series]] = set()
+    observable_set: set[type[observables.Observable]] = set()
+
+    def find_root(node: type[series.Series]) -> None:
+        if node in visited_series:
+            return
+        visited_series.add(node)
+        try: # Maybe its an ObservableSeries
+            observable_set.add(node.OBSERVABLE)                                 # type: ignore
+        except AttributeError:
+            try: # Maybe its a TransformedSeries
+                find_root(node.SOURCE)                                          # type: ignore
+            except AttributeError:
+                # Must be a CombinedSeries
+                find_root(node.SOURCE_LEFT)                                     # type: ignore
+                find_root(node.SOURCE_RIGHT)                                    # type: ignore
+
+    for s in series_:
+        find_root(s)
+
+    return observable_set
 
 # ------------------------------------------------------------------------------
 # Market Data and Mask building
@@ -205,50 +188,6 @@ def _populate(
         populate_market_data(column, ticker_data)
         populate_mask(column, ticker_info, ticker_data)
 
-    for mmap in market_data.values():
-        mmap.flush()
-    mask.flush()
-
-# ------------------------------------------------------------------------------
-# Feature Array calculation
-# ------------------------------------------------------------------------------
-
-def _order(
-    features_: Iterable[type[features.Feature]]
-) -> Iterable[type[features.Feature]]:
-    features_and_source = {
-        f: (
-            [f.SOURCE] if issubclass(f, features.DerivedFeature)
-            else []
-        )
-        for f in features_
-    }
-    ts = TopologicalSorter(features_and_source)
-    return ts.static_order()
-
-def _build(
-    features_: dict[type[features.Feature], md.Array],
-    *,
-    market_data: md.MarketData,
-) -> None:
-    """
-    Build the `md.Array` for every feature in `features_` for every timestamp
-    and ticker.
-    
-    Sorts `features_` topologically via `SOURCE` first such that if any derived
-    feature's `SOURCE` is also requested it will be computed before it and thus
-    have its values available in the cache.
-    """
-
-    ordered_features = _order(features_.keys())
-    built_features = features.FeatureCache()
-    
-    for feature in ordered_features:
-        values = features_[feature]
-        feature.compute(market_data, built_features, values)
-        values.flush()
-        built_features[feature] = values
-
 # ------------------------------------------------------------------------------
 # Public Universe creation
 # ------------------------------------------------------------------------------
@@ -284,7 +223,7 @@ def build_universe_for(
         created by `download`.
 
     path : Path
-        Directory to store memory-mapped arrays of market features (wiped if
+        Directory to store memory-mapped arrays of market series (wiped if
         already exists).
 
     sector : Sector, optional
@@ -308,7 +247,7 @@ def build_universe_for(
     Returns
     -------
     Universe
-        `Universe` instance containing all market features required to compute
+        `Universe` instance containing all market series required to compute
         the listed alphas for stocks meeting the specified `sector` and
         `industry` filtering and `liquidity_` and `mcap_thresholds`, built from
         data found in `src`.
@@ -325,25 +264,31 @@ def build_universe_for(
     """
 
     resolved_alphas = {resolve(a, alphas.Alpha) for a in alphas_}
-    xs_features = _deduce_cross_sectional_features(resolved_alphas)
-    required_observables, required_features = _scan_feature_tree(xs_features)
+    xs_series = \
+        _deduce_cross_sectional_series(
+            [a.SIGNAL for a in resolved_alphas]
+        ) and \
+        _deduce_forward_returns_series(
+            set().union(*[a.HORIZONS for a in resolved_alphas])                 # type: ignore
+        )
+    md_observables =  _deduce_market_data_observables(xs_series)
 
     equity_data = EquityData(src, sector, industry)
     calendar = Calendar(equity_data.dates)
     shape = calendar.T, len(equity_data.tickers)
 
-    _make_fresh_directory(path)
-    market_data = _allocate_storage(
-        required_observables,
-        path=path,
-        shape=shape,
-    )
+    allocator = md.Allocator(path, shape)
+    market_data: md.MarketData = {
+        o: allocator.allocate(identifier=o.__name__)
+        for o in md_observables
+    }
     mask = np.memmap(
         path / "mask.dat",
         dtype=bool,
         mode="w+",
         shape=shape,
     )
+
     _populate(
         market_data,
         mask,
@@ -353,10 +298,13 @@ def build_universe_for(
         lookback=lookback,
     )
 
-    features_ = _allocate_storage(required_features, path=path, shape=shape)
-    _build(features_, market_data=market_data)
+    series_ = series.build(
+        xs_series,
+        market_data=market_data,
+        allocator=allocator,
+    )
 
-    _release_storage(market_data)
-    _release_storage(features_, identifiers=required_features-xs_features)
+    for arr in set(market_data.values()) - set(series_.values()):
+        allocator.release(arr)
 
-    return Universe(shape, calendar, mask, features_)
+    return Universe(shape, calendar, mask, series_)
