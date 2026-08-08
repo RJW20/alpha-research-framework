@@ -50,12 +50,12 @@ class Volume(ObservableSeries):
 
 LogClose = transform(Close, func=transforms.log)
 
-LogCloseLag1d   = transform(LogClose, func=transforms.shift_forward, period=Window.DAY      )
-LogCloseLag5d   = transform(LogClose, func=transforms.shift_forward, period=Window.WEEK     )
-LogCloseLag20d  = transform(LogClose, func=transforms.shift_forward, period=Window.MONTH    )
-LogCloseLag63d  = transform(LogClose, func=transforms.shift_forward, period=Window.QUARTER  )
-LogCloseLag126d = transform(LogClose, func=transforms.shift_forward, period=Window.HALF_YEAR)
-LogCloseLag252d = transform(LogClose, func=transforms.shift_forward, period=Window.YEAR     )
+LogCloseLag1d   = transform(LogClose, func=transforms.shift_forward, period=Window.DAY.value      )
+LogCloseLag5d   = transform(LogClose, func=transforms.shift_forward, period=Window.WEEK.value     )
+LogCloseLag20d  = transform(LogClose, func=transforms.shift_forward, period=Window.MONTH.value    )
+LogCloseLag63d  = transform(LogClose, func=transforms.shift_forward, period=Window.QUARTER.value  )
+LogCloseLag126d = transform(LogClose, func=transforms.shift_forward, period=Window.HALF_YEAR.value)
+LogCloseLag252d = transform(LogClose, func=transforms.shift_forward, period=Window.YEAR.value     )
 
 Returns1d   = LogClose - LogCloseLag1d
 Returns5d   = LogClose - LogCloseLag5d
@@ -68,12 +68,12 @@ Returns252d = LogClose - LogCloseLag252d
 # Volatility
 # ----------------------------------------------------------------------------------------------------------------------
 
-Volatility1d   = transform(Returns1d, func=transforms.rolling_std, lookback=Window.DAY      )
-Volatility5d   = transform(Returns1d, func=transforms.rolling_std, lookback=Window.WEEK     )
-Volatility20d  = transform(Returns1d, func=transforms.rolling_std, lookback=Window.MONTH    )
-Volatility63d  = transform(Returns1d, func=transforms.rolling_std, lookback=Window.QUARTER  )
-Volatility126d = transform(Returns1d, func=transforms.rolling_std, lookback=Window.HALF_YEAR)
-Volatility252d = transform(Returns1d, func=transforms.rolling_std, lookback=Window.YEAR     )
+Volatility1d   = transform(Returns1d, func=transforms.rolling_std, lookback=Window.DAY.value      )
+Volatility5d   = transform(Returns1d, func=transforms.rolling_std, lookback=Window.WEEK.value     )
+Volatility20d  = transform(Returns1d, func=transforms.rolling_std, lookback=Window.MONTH.value    )
+Volatility63d  = transform(Returns1d, func=transforms.rolling_std, lookback=Window.QUARTER.value  )
+Volatility126d = transform(Returns1d, func=transforms.rolling_std, lookback=Window.HALF_YEAR.value)
+Volatility252d = transform(Returns1d, func=transforms.rolling_std, lookback=Window.YEAR.value     )
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Lagged Close
@@ -90,11 +90,11 @@ CloseLag1d = transform(Close, func=transforms.shift_forward, period=Window.DAY)
 # Forward Returns
 # ----------------------------------------------------------------------------------------------------------------------
 
-ForwardReturns1d   = transform(Returns1d,   target=True, func=transforms.shift_back, period=Window.DAY      )
-ForwardReturns5d   = transform(Returns5d,   target=True, func=transforms.shift_back, period=Window.WEEK     )
-ForwardReturns20d  = transform(Returns20d,  target=True, func=transforms.shift_back, period=Window.MONTH    )
-ForwardReturns63d  = transform(Returns63d,  target=True, func=transforms.shift_back, period=Window.QUARTER  )
-ForwardReturns126d = transform(Returns126d, target=True, func=transforms.shift_back, period=Window.HALF_YEAR)
-ForwardReturns252d = transform(Returns252d, target=True, func=transforms.shift_back, period=Window.YEAR     )
+ForwardReturns1d   = transform(Returns1d,   target=True, func=transforms.shift_back, period=Window.DAY.value      )
+ForwardReturns5d   = transform(Returns5d,   target=True, func=transforms.shift_back, period=Window.WEEK.value     )
+ForwardReturns20d  = transform(Returns20d,  target=True, func=transforms.shift_back, period=Window.MONTH.value    )
+ForwardReturns63d  = transform(Returns63d,  target=True, func=transforms.shift_back, period=Window.QUARTER.value  )
+ForwardReturns126d = transform(Returns126d, target=True, func=transforms.shift_back, period=Window.HALF_YEAR.value)
+ForwardReturns252d = transform(Returns252d, target=True, func=transforms.shift_back, period=Window.YEAR.value     )
 
 # ----------------------------------------------------- Targets --------------------------------------------------------
