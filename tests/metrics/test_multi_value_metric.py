@@ -4,7 +4,7 @@ from alpha_research_framework.metrics import Metric, MultiValueMetric
 from tests.utils import RegistryIsolatedTestCase
 
     
-class TestMultiValueFeatureMeasures(RegistryIsolatedTestCase):
+class TestMultiValueMetricMeasures(RegistryIsolatedTestCase):
     REGISTRY_OWNER = Metric
 
     def test_class_var_assertion(self) -> None:
