@@ -24,32 +24,32 @@ class SignalMeta(OperatorMeta):
         return cls._combine(
             other,
             operator.add,
-            f"({cls.__name__}Plus{other.__name__})",
+            f"({cls.__name__}_plus_{other.__name__})",
         )
     
     def __sub__(cls, other: type[Signal]) -> type[CombinedSignal]:              # noqa: N805
         return cls._combine(
             other,
             operator.sub,
-            f"({cls.__name__}Minus{other.__name__})",
+            f"({cls.__name__}_minus_{other.__name__})",
         )
     
     def __mul__(cls, other: type[Signal]) -> type[CombinedSignal]:              # noqa: N805
         return cls._combine(
             other,
             operator.mul,
-            f"({cls.__name__}Times{other.__name__})",
+            f"({cls.__name__}_times_{other.__name__})",
         )
     
     def __truediv__(cls, other: type[Signal]) -> type[CombinedSignal]:          # noqa: N805
         return cls._combine(
             other,
             operator.truediv,
-            f"({cls.__name__}Divide{other.__name__})",
+            f"({cls.__name__}_divide_{other.__name__})",
         )
     
     def __neg__(cls) -> type[NegatedSignal]:                                    # noqa: N805
-        return cls._negate(f"(Minus{cls.__name__})")
+        return cls._negate(f"(minus{cls.__name__})")
     
     def _combine(
         cls,                                                                    # noqa: N805
