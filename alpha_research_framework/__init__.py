@@ -1,4 +1,4 @@
-from . import alphas, features, metrics
+from . import alphas, signals, series, metrics
 from .download import download
 from .evaluate import evaluate
 from .universe import Universe, build_universe_for

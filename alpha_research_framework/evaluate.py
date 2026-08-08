@@ -3,8 +3,9 @@ from typing import Sequence
 import pandas as pd
 
 import alpha_research_framework.alphas as alphas
-import alpha_research_framework.features as features
 import alpha_research_framework.metrics as metrics
+import alpha_research_framework.series as series
+import alpha_research_framework.signals as signals
 from alpha_research_framework.registrable import resolve
 from alpha_research_framework.universe import Universe
 from alpha_research_framework.window import Window
@@ -62,12 +63,12 @@ def _evaluate(
     """
 
     window_to_forward_returns = {
-        Window.DAY:         features.ForwardReturns1d,
-        Window.WEEK:        features.ForwardReturns5d,
-        Window.MONTH:       features.ForwardReturns20d,
-        Window.QUARTER:     features.ForwardReturns63d,
-        Window.HALF_YEAR:   features.ForwardReturns126d,
-        Window.YEAR:        features.ForwardReturns252d,
+        Window.DAY:         series.ForwardReturns1d,
+        Window.WEEK:        series.ForwardReturns5d,
+        Window.MONTH:       series.ForwardReturns20d,
+        Window.QUARTER:     series.ForwardReturns63d,
+        Window.HALF_YEAR:   series.ForwardReturns126d,
+        Window.YEAR:        series.ForwardReturns252d,
     }
 
     horizons = {h for a in alphas_ for h in a.HORIZONS}
@@ -78,7 +79,7 @@ def _evaluate(
             continue
 
         xs, forward_returns = universe[date]
-        cache = alphas.factors.FactorCache()
+        cache = signals.Cache()
         for alpha in alphas_:
 
             horizons_to_evaluate = horizons_in_phase & alpha.HORIZONS
