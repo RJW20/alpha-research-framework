@@ -20,35 +20,38 @@ from .transform import transform
 # ----------------------------------------------------------------------------------------------------------------------
 
 class Open(ObservableSeries):
-    """`series` = `observables.Open`"""
     TAG = Series.Tag.PREDICTOR
     OBSERVABLE = observables.Open
 
 class High(ObservableSeries):
-    """`series` = `observables.High`"""
     TAG = Series.Tag.PREDICTOR
     OBSERVABLE = observables.High
 
 class Low(ObservableSeries):
-    """`series` = `observables.Low`"""
     TAG = Series.Tag.PREDICTOR
     OBSERVABLE = observables.Low
 
 class Close(ObservableSeries):
-    """`series` = `observables.Close`"""
     TAG = Series.Tag.PREDICTOR
     OBSERVABLE = observables.Close
 
 class Volume(ObservableSeries):
-    """`series` = `observables.Volume`"""
     TAG = Series.Tag.PREDICTOR
     OBSERVABLE = observables.Volume
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Returns
+# Log Observables
 # ----------------------------------------------------------------------------------------------------------------------
 
-LogClose = transform(Close, func=transforms.log)
+LogOpen   = transform(Open,   func=transforms.log)
+LogHigh   = transform(High,   func=transforms.log)
+LogLow    = transform(Low,    func=transforms.log)
+LogClose  = transform(Close,  func=transforms.log)
+LogVolume = transform(Volume, func=transforms.log)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Lagged Log Observables
+# ----------------------------------------------------------------------------------------------------------------------
 
 LogCloseLag1d   = transform(LogClose, func=transforms.shift_forward, period=Window.DAY.value      )
 LogCloseLag5d   = transform(LogClose, func=transforms.shift_forward, period=Window.WEEK.value     )
@@ -56,6 +59,17 @@ LogCloseLag20d  = transform(LogClose, func=transforms.shift_forward, period=Wind
 LogCloseLag63d  = transform(LogClose, func=transforms.shift_forward, period=Window.QUARTER.value  )
 LogCloseLag126d = transform(LogClose, func=transforms.shift_forward, period=Window.HALF_YEAR.value)
 LogCloseLag252d = transform(LogClose, func=transforms.shift_forward, period=Window.YEAR.value     )
+
+LogVolumeLag1d   = transform(LogVolume, func=transforms.shift_forward, period=Window.DAY.value      )
+LogVolumeLag5d   = transform(LogVolume, func=transforms.shift_forward, period=Window.WEEK.value     )
+LogVolumeLag20d  = transform(LogVolume, func=transforms.shift_forward, period=Window.MONTH.value    )
+LogVolumeLag63d  = transform(LogVolume, func=transforms.shift_forward, period=Window.QUARTER.value  )
+LogVolumeLag126d = transform(LogVolume, func=transforms.shift_forward, period=Window.HALF_YEAR.value)
+LogVolumeLag252d = transform(LogVolume, func=transforms.shift_forward, period=Window.YEAR.value     )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Returns
+# ----------------------------------------------------------------------------------------------------------------------
 
 Returns1d   = LogClose - LogCloseLag1d
 Returns5d   = LogClose - LogCloseLag5d
@@ -65,8 +79,33 @@ Returns126d = LogClose - LogCloseLag126d
 Returns252d = LogClose - LogCloseLag252d
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Volatility
+# Rolling Averages
 # ----------------------------------------------------------------------------------------------------------------------
+
+RollingAvgClose1d   = transform(Close, func=transforms.rolling_avg, lookback=Window.DAY.value      )
+RollingAvgClose5d   = transform(Close, func=transforms.rolling_avg, lookback=Window.WEEK.value     )
+RollingAvgClose20d  = transform(Close, func=transforms.rolling_avg, lookback=Window.MONTH.value    )
+RollingAvgClose63d  = transform(Close, func=transforms.rolling_avg, lookback=Window.QUARTER.value  )
+RollingAvgClose126d = transform(Close, func=transforms.rolling_avg, lookback=Window.HALF_YEAR.value)
+RollingAvgClose252d = transform(Close, func=transforms.rolling_avg, lookback=Window.YEAR.value     )
+
+RollingAvgVolume1d   = transform(Volume, func=transforms.rolling_avg, lookback=Window.DAY.value      )
+RollingAvgVolume5d   = transform(Volume, func=transforms.rolling_avg, lookback=Window.WEEK.value     )
+RollingAvgVolume20d  = transform(Volume, func=transforms.rolling_avg, lookback=Window.MONTH.value    )
+RollingAvgVolume63d  = transform(Volume, func=transforms.rolling_avg, lookback=Window.QUARTER.value  )
+RollingAvgVolume126d = transform(Volume, func=transforms.rolling_avg, lookback=Window.HALF_YEAR.value)
+RollingAvgVolume252d = transform(Volume, func=transforms.rolling_avg, lookback=Window.YEAR.value     )
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Rolling Standard Deviations
+# ----------------------------------------------------------------------------------------------------------------------
+
+RollingStdClose1d   = transform(Close, func=transforms.rolling_std, lookback=Window.DAY.value      )
+RollingStdClose5d   = transform(Close, func=transforms.rolling_std, lookback=Window.WEEK.value     )
+RollingStdClose20d  = transform(Close, func=transforms.rolling_std, lookback=Window.MONTH.value    )
+RollingStdClose63d  = transform(Close, func=transforms.rolling_std, lookback=Window.QUARTER.value  )
+RollingStdClose126d = transform(Close, func=transforms.rolling_std, lookback=Window.HALF_YEAR.value)
+RollingStdClose252d = transform(Close, func=transforms.rolling_std, lookback=Window.YEAR.value     )
 
 Volatility1d   = transform(Returns1d, func=transforms.rolling_std, lookback=Window.DAY.value      )
 Volatility5d   = transform(Returns1d, func=transforms.rolling_std, lookback=Window.WEEK.value     )
@@ -74,12 +113,6 @@ Volatility20d  = transform(Returns1d, func=transforms.rolling_std, lookback=Wind
 Volatility63d  = transform(Returns1d, func=transforms.rolling_std, lookback=Window.QUARTER.value  )
 Volatility126d = transform(Returns1d, func=transforms.rolling_std, lookback=Window.HALF_YEAR.value)
 Volatility252d = transform(Returns1d, func=transforms.rolling_std, lookback=Window.YEAR.value     )
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Lagged Close
-# ----------------------------------------------------------------------------------------------------------------------
-
-CloseLag1d = transform(Close, func=transforms.shift_forward, period=Window.DAY)
 
 # ---------------------------------------------------- Predictors ------------------------------------------------------
 
