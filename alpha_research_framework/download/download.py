@@ -22,7 +22,7 @@ def download(
     dest: Path,
     tickers: Iterable[str],
     start_date: str,
-    years: int
+    years: int,
 ) -> None:
     """
     Download per-stock daily data and create static metadata.
@@ -30,13 +30,14 @@ def download(
     Parameters
     ----------
     dest : Path
-        Directory to write all downloaded/created files to.
+        Directory to write all downloaded/created files to (created or
+        overwritten).
     tickers : Iterable[str]
-        Listing of all tickers to download stock data for.
+        Listing of all tickers to download data for.
     start_date : str (yyyy-mm-dd)
-        First date to retrieve stock data.
+        First date to retrieve data for.
     years : int
-        Number of years to download daily stock data over.
+        Number of years to download daily data over.
 
     Returns
     -------

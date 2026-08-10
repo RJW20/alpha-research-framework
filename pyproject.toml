@@ -34,7 +34,7 @@ ignore = [
 "**/__init__.py" = ["F401", "E501", "I001"]
 
 [tool.poetry.scripts]
-download = "scripts.download:download"
+download = "alpha_research_framework.download.script:download_by_json"
 runner = "scripts.runner:run"
 tests = "scripts.run_tests:main"
 
