@@ -113,9 +113,6 @@ class Returns252d(SeriesSignal):
 # Rolling Averages
 # ------------------------------------------------------------------------------
 
-class RollingAvgClose1d(SeriesSignal):
-    SERIES = series.RollingAvgClose1d
-
 class RollingAvgClose5d(SeriesSignal):
     SERIES = series.RollingAvgClose5d
 
@@ -130,9 +127,6 @@ class RollingAvgClose126d(SeriesSignal):
 
 class RollingAvgClose252d(SeriesSignal):
     SERIES = series.RollingAvgClose252d
-
-class RollingAvgVolume1d(SeriesSignal):
-    SERIES = series.RollingAvgVolume1d
 
 class RollingAvgVolume5d(SeriesSignal):
     SERIES = series.RollingAvgVolume5d
@@ -153,9 +147,6 @@ class RollingAvgVolume252d(SeriesSignal):
 # Rolling Standard Deviations
 # ------------------------------------------------------------------------------
 
-class RollingStdClose1d(SeriesSignal):
-    SERIES = series.RollingStdClose1d
-
 class RollingStdClose5d(SeriesSignal):
     SERIES = series.RollingStdClose5d
 
@@ -170,9 +161,6 @@ class RollingStdClose126d(SeriesSignal):
 
 class RollingStdClose252d(SeriesSignal):
     SERIES = series.RollingStdClose252d
-
-class Volatility1d(SeriesSignal):
-    SERIES = series.Volatility1d
 
 class Volatility5d(SeriesSignal):
     SERIES = series.Volatility5d
