@@ -9,7 +9,7 @@ from . import stats
 from .multi_value_metric import MultiValueMetric
 
 
-class QuantilePorfolio(MultiValueMetric):
+class QuantilePortfolio(MultiValueMetric):
 
     __quantiles__ = 10
 
