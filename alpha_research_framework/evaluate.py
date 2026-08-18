@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, cast
 
 import pandas as pd
 
@@ -15,15 +15,15 @@ def _create_dataframes(
     alphas_: list[type[alphas.Alpha]],
     metrics_: list[type[metrics.Metric]],
     index: pd.Index,
-) -> dict[str, pd.DataFrame]:
+) -> dict[type[alphas.Alpha], pd.DataFrame]:
     """
-    Return a dictionary mapping each `alpha.ID` to an empty `DataFrame` with
-    given index and columns per `(horizon, metric.ID, metric.MEASURES)` for
-    every horizon required by the alpha, for every metric in `metrics` and for
-    each of a metrics measures if it is multi-valued.
+    Return a dictionary mapping each `Alpha` to an empty `DataFrame` with given
+    index and columns per `(horizon, metric.ID, metric.MEASURES)` for every
+    horizon required by the alpha, for every metric in `metrics` and for each
+    of a metric's measures if it is multi-valued.
     """
 
-    result: dict[str, pd.DataFrame] = dict()
+    result: dict[type[alphas.Alpha], pd.DataFrame] = dict()
 
     for alpha in alphas_:
         tuples: list[tuple[str | Window,...]] = list()
@@ -38,7 +38,7 @@ def _create_dataframes(
                     tuples.append((horizon, metric.ID, ""))
         names = ["horizon", "metric", "measures"]
         columns = pd.MultiIndex.from_tuples(tuples, names=names)
-        result[alpha.ID] = pd.DataFrame(
+        result[alpha] = pd.DataFrame(
             index=index,
             columns=columns,
             dtype=float,
@@ -51,7 +51,7 @@ def _evaluate(
     universe: Universe,
     alphas_: list[type[alphas.Alpha]],
     metrics_: list[type[metrics.Metric]],
-    dfs: dict[str, pd.DataFrame],
+    dfs: dict[type[alphas.Alpha], pd.DataFrame],
 ) -> None:
     """
     Populate the provided `DataFrame`s with metric evaluations for each alpha
@@ -86,7 +86,7 @@ def _evaluate(
             if not horizons_to_evaluate:
                 continue
 
-            df = dfs[alpha.ID]
+            df = dfs[alpha]
             signal = alpha.compute(xs, cache)
             for horizon in horizons_to_evaluate:
                 forward_returns_over_horizon = (
@@ -98,11 +98,32 @@ def _evaluate(
                     )
 
 
+def _unresolve_keys(
+    dfs: dict[type[alphas.Alpha], pd.DataFrame],
+    alphas_: set[str | type[alphas.Alpha]],
+) -> dict[str | type[alphas.Alpha], pd.DataFrame]:
+    """
+    Match `dfs` keys to `alphas_`.
+
+    Replaces any keys which are types with their `ID` if that is how the `Alpha`
+    is expressed in `alphas_`.
+    """
+
+    resolved_alphas = list(dfs.keys())
+    unresolved_dfs = cast(dict[str | type[alphas.Alpha], pd.DataFrame], dfs)
+
+    for alpha in resolved_alphas:
+        if alpha.ID in alphas_:
+            unresolved_dfs[alpha.ID] = unresolved_dfs.pop(alpha)
+
+    return unresolved_dfs
+
+
 def evaluate(
     universe: Universe,
     alphas_: Sequence[str | type[alphas.Alpha]],
     metrics_: Sequence[str | type[metrics.Metric]] = ["information_coefficient"]
-) -> dict[str, pd.DataFrame]:
+) -> dict[str | type[alphas.Alpha], pd.DataFrame]:
     """
     Evaluate the cross-sectional predictive power of one or more alphas.
 
@@ -132,15 +153,12 @@ def evaluate(
         - `"information_coefficient"` or `InformationCoefficient`
         - `"quantile_portfolio"` or `QuantilePorfolio`
 
-        For information on creating custom metrics see the "Metrics" section of
-        the documentation.
-
     Returns
     -------
-    dict[str, pd.DataFrame]
-        Dictionary mapping `alpha.ID` to a `DataFrame` indexed by date, with
-        columns per `(horizon, metric)` pair, containing a measure of the
-        correlation between each alpha's signal at time `t` and the realised
+    dict[str | type[alphas.Alpha], pd.DataFrame]
+        Dictionary mapping each alpha in `alphas_` to a `DataFrame` indexed by
+        date, with columns per `(horizon, metric)` pair, containing a measure of
+        the correlation between each alpha's signal at time `t` and the realised
         forward returns from `t` to `t + horizon`. Missing values will appear in
         a `DataFrame` where:
         - Frequency does not align with horizon.
@@ -151,11 +169,11 @@ def evaluate(
     Raises
     ------
     ValueError
-        If a `str` in `alphas` or `metrics` is unrecognised.
+        If a `str` in `alphas_` or `metrics_` is unrecognised.
 
     TypeError
-        If a `type` in `alphas` is not a subclass of `Alpha` or a `type` in
-        `metrics` is not a subclass of `Metric`.
+        If a `type` in `alphas_` is not a subclass of `Alpha` or a `type` in
+        `metrics_` is not a subclass of `Metric`.
     """
 
     resolved_alphas = list(
@@ -170,5 +188,4 @@ def evaluate(
         index=universe.dates,
     )
     _evaluate(universe, resolved_alphas, resolved_metrics, result)
-
-    return result
+    return _unresolve_keys(result, set(alphas_))
