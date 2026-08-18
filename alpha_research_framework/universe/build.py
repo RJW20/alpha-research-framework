@@ -212,7 +212,7 @@ def build_universe_for(
         List of alphas wanting to be evaluated, given by either `ID` or type
         name. Available options include:
         - `"reversal_1d"` or `Reversal1d`
-        - `"momentum_12m_1m"` or `Momentum12m1m`
+        - `"close_z_score_12m"` or `CloseZScore12m`
         - `"volatility_20d"` or `Volatility20d`
 
         For a full list of available alphas along with information on creating

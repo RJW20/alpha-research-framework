@@ -1,4 +1,5 @@
 __pycache__/
+dist/
 .ruff_cache
 metadata.json
 download_log.json
